@@ -41,7 +41,10 @@ The repository test suite currently proves:
 4. Same-agent rejection and delegation-depth enforcement
 5. Cancellation of running tasks
 6. MCP Streamable HTTP initialization, session handling, tool discovery, and tool invocation using the official TypeScript client SDK
-7. TypeScript strict type checking and production compilation
+7. Local setup argument validation, no-change dry runs, and prerequisite error handling
+8. TypeScript strict type checking and production compilation
+9. The compiled release server starts and returns the expected loopback health response
+10. A full mocked installation creates config and MCP registrations on the first run, then preserves both on a repeated run
 
 Commands used:
 
@@ -49,10 +52,11 @@ Commands used:
 npm run typecheck
 npm test
 npm run build
+npm run smoke:http
 ```
 
 ## Not Yet Proven in This Build Environment
 
-The build environment did not contain authenticated `claude` or `codex` executables, so live paid-model task execution was not run here. The adapters are implemented against the current official CLI interfaces and the included `npm run doctor` command checks both executables on the installation host.
+The build environment did not contain authenticated `claude` or `codex` executables, so live paid-model task execution was not run here. The adapters are implemented against the current official CLI interfaces and the included `npm run doctor` command checks both executables on the installation host. The complete bootstrap path was exercised with isolated mock executables, including first-time registration and idempotent re-runs; authenticated peer execution remains the installation-host acceptance test.
 
 ChatGPT Work and Claude Cowork require a real HTTPS deployment plus connector authorization. The server implements bearer authentication and OAuth JWT verification, but completing those account-specific UI steps requires the user's OAuth tenant, public hostname, and enabled workspace features.

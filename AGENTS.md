@@ -6,6 +6,7 @@
 - Type check: `npm run typecheck`
 - Test: `npm test`
 - Build: `npm run build`
+- Release HTTP smoke test: `npm run smoke:http`
 - Synchronize skill copies: `npm run sync:skills`
 - Installation diagnostics: `npm run doctor`
 

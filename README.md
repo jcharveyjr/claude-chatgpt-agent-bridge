@@ -21,6 +21,20 @@ See [Validation and Compatibility](docs/VALIDATION.md) for what is proven, what 
 
 ## Quick Local Start
 
+On Windows, macOS, or Linux, the repeatable setup command checks the prerequisites, builds and tests the bridge, creates the local config if needed, and registers the MCP endpoint with both CLIs:
+
+```bash
+node scripts/setup-local.mjs
+```
+
+To make a particular project the default allowed workspace during setup:
+
+```powershell
+node .\scripts\setup-local.mjs --workspace-name my-project --workspace "C:\path\to\project"
+```
+
+Existing config and MCP registrations are preserved. To perform the same steps manually:
+
 ```bash
 npm install
 npm run build

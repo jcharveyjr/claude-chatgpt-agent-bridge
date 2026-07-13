@@ -17,7 +17,23 @@ codex --version
 
 ### 2. Install and build Agent Bridge
 
-From this repository:
+From this repository, run the repeatable setup command:
+
+```powershell
+node .\scripts\setup-local.mjs
+```
+
+It checks Node.js, Claude Code, and Codex; installs dependencies; creates the safe loopback config if one does not exist; synchronizes skills; type-checks, tests, and builds the project; starts the compiled server on a temporary loopback port for a health check; registers `agent-bridge` with both CLIs; and runs the installation doctor. Existing config and MCP registrations are preserved.
+
+To allow a project folder and make it the default workspace in the same run:
+
+```powershell
+node .\scripts\setup-local.mjs --workspace-name workbooks --workspace "C:\Users\JC Harvey\Documents\Workbooks\new"
+```
+
+Use only letters, numbers, underscores, and hyphens in the workspace name. The full path may contain spaces. Run `node .\scripts\setup-local.mjs --help` for no-register and dry-run options.
+
+The equivalent manual build steps are:
 
 ```bash
 npm install
@@ -77,7 +93,10 @@ Run the checks:
 ```bash
 npm run doctor
 npm test
+npm run smoke:http
 ```
+
+If the setup command completed successfully, these checks and the MCP registration steps below are already done. They remain documented for verification and recovery.
 
 Start one shared broker in a dedicated terminal:
 

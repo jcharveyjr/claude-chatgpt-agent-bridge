@@ -33,8 +33,8 @@ try {
 }
 
 try {
-  await access(resolve("dist/cli.js"), constants.R_OK);
-  checks.push({ name: "compiled server", ok: true, detail: resolve("dist/cli.js") });
+  await access(resolve("dist/src/cli.js"), constants.R_OK);
+  checks.push({ name: "compiled server", ok: true, detail: resolve("dist/src/cli.js") });
 } catch {
   checks.push({ name: "compiled server", ok: false, detail: "run npm run build" });
 }
