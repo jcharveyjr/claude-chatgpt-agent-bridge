@@ -1,0 +1,7 @@
+node_modules/
+dist/
+.agent-bridge/
+bridge.config.json
+.env
+*.log
+coverage/

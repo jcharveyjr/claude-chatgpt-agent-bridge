@@ -1,0 +1,16 @@
+[mcp_servers.agent_bridge]
+url = "http://127.0.0.1:8787/mcp"
+startup_timeout_sec = 20
+tool_timeout_sec = 60
+enabled = true
+required = false
+default_tools_approval_mode = "writes"
+
+[mcp_servers.agent_bridge.tools.agent_bridge_capabilities]
+approval_mode = "approve"
+
+[mcp_servers.agent_bridge.tools.get_task]
+approval_mode = "approve"
+
+[mcp_servers.agent_bridge.tools.list_tasks]
+approval_mode = "approve"

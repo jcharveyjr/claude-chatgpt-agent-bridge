@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
+  "name": "agent-bridge",
+  "displayName": "Agent Bridge",
+  "version": "0.1.0",
+  "description": "Delegate bounded work between Claude and Codex or ChatGPT through a shared MCP task broker.",
+  "author": {
+    "name": "JC Harvey"
+  },
+  "license": "MIT",
+  "keywords": ["agents", "delegation", "mcp", "codex", "chatgpt"],
+  "skills": "./skills/",
+  "defaultEnabled": true
+}

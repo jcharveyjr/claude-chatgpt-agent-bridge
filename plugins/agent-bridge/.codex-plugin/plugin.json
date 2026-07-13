@@ -1,0 +1,18 @@
+{
+  "name": "agent-bridge",
+  "version": "0.1.0",
+  "description": "Delegate bounded work between Codex/ChatGPT and Claude through a shared MCP task broker.",
+  "author": {
+    "name": "JC Harvey"
+  },
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Agent Bridge",
+    "shortDescription": "Delegate work safely between Claude and Codex.",
+    "longDescription": "Adds the repeatable workflow for assigning bounded tasks to a peer model through the Agent Bridge MCP server, retrieving results, and preventing circular delegation.",
+    "developerName": "JC Harvey",
+    "category": "Productivity",
+    "capabilities": ["Read", "Write"],
+    "defaultPrompt": "Use Agent Bridge to delegate an independent part of this project to the peer agent, then integrate its result."
+  }
+}

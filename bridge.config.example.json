@@ -1,0 +1,32 @@
+{
+  "dataDirectory": ".agent-bridge",
+  "defaultWorkspace": "bridge",
+  "maxDelegationDepth": 2,
+  "maxTaskCharacters": 50000,
+  "workspaces": {
+    "bridge": "."
+  },
+  "agents": {
+    "claude": {
+      "adapter": "claude-cli",
+      "command": "claude",
+      "enabled": true,
+      "timeoutMs": 1800000,
+      "maxTurns": 30
+    },
+    "codex": {
+      "adapter": "codex-cli",
+      "command": "codex",
+      "enabled": true,
+      "timeoutMs": 1800000
+    }
+  },
+  "http": {
+    "host": "127.0.0.1",
+    "port": 8787,
+    "allowedOrigins": [
+      "https://chatgpt.com",
+      "https://claude.ai"
+    ]
+  }
+}

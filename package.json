@@ -1,0 +1,32 @@
+{
+  "name": "claude-chatgpt-agent-bridge",
+  "version": "0.1.0",
+  "description": "A vendor-neutral MCP task broker for delegated work between Claude and Codex/ChatGPT agents.",
+  "type": "module",
+  "private": true,
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev:stdio": "tsx src/cli.ts stdio",
+    "dev:http": "tsx src/cli.ts http",
+    "start:stdio": "node dist/cli.js stdio",
+    "start:http": "node dist/cli.js http",
+    "doctor": "node scripts/doctor.mjs",
+    "sync:skills": "node scripts/sync-skills.mjs",
+    "test": "node --test --import tsx test/*.test.ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.29.0",
+    "jose": "6.2.3",
+    "zod": "4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "tsx": "^4.20.0",
+    "typescript": "^5.9.0"
+  },
+  "license": "MIT"
+}
