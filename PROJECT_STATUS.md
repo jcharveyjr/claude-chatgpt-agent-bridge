@@ -2,7 +2,7 @@
 
 **Last updated:** July 14, 2026 (America/Chicago)  
 **Current version:** 0.1.7  
-**Overall status:** Local Windows MVP is complete, operational, and validated with real authenticated handoffs in both directions. The responsibility matrix and execution plan below are approved as the project plan.
+**Overall status:** Local Windows MVP is complete and operational. The approved execution plan remains in effect. The next two Codex-owned live acceptance steps are currently blocked by the Codex account usage limit and have not been marked complete.
 
 ## Executive Summary
 
@@ -104,6 +104,23 @@ This iteration was reviewed and validated from a clean clone. Type checking, all
 - **Clean development clone:** a proper local Git development clone was established and validated on Windows.
 - **v0.1.7 release:** the `v0.1.7` tag and GitHub Release were published.
 
+## Codex Acceptance Attempt — July 14, 2026
+
+ChatGPT launched Codex CLI `0.144.3` from the clean development clone with `workspace-write` access limited to the repository and the disposable directory `C:\Users\JC Harvey\Documents\AgentBridge-accept`. Codex was instructed to complete execution-plan steps 1 and 2, update the acceptance records, run the full verification suite, and commit the resulting changes without pushing.
+
+Codex initialized successfully but terminated before performing any project work because the connected Codex account had reached its usage limit. The CLI reported that usage becomes available again on **July 20, 2026 at 7:41 PM**.
+
+Verified outcome:
+
+- No live handoff was run against the latest command-spawn fix.
+- No `workspace_write` task was submitted or completed.
+- No task IDs or acceptance diffs were produced.
+- No source, test, or documentation changes were made by Codex.
+- The disposable directory was created, but no acceptance result may be recorded as passed.
+- Steps 1 and 2 remain **Pending — blocked by external Codex usage quota**.
+
+This is an account-capacity blocker, not a discovered Agent Bridge defect. The tests must be rerun after Codex access is restored. Claude may begin static architecture and security review now, but final acceptance review must wait for the live handoff evidence and write-test diffs.
+
 ## Official Execution Plan
 
 This section is the approved plan for completing and expanding Agent Bridge. The working local Windows runtime remains the baseline and must stay operational until replacement runtime changes are validated.
@@ -124,8 +141,8 @@ This section is the approved plan for completing and expanding Agent Bridge. The
 | Inspect the stale v0.1.1 Downloads copy and archive or delete it | Immediate | Not started | ChatGPT/Codex | None | Approve permanent deletion after inspection | Nothing unique remains and the obsolete copy is removed from normal use |
 | Maintain GitHub Actions CI | Immediate | Completed | ChatGPT/Codex | Claude reviews release controls | None | Pushes and pull requests continue to run required checks automatically |
 | Publish the tagged v0.1.7 release | Immediate | Completed | ChatGPT/Codex | Claude reviews notes | None | Tag and release notes document validation and known limits |
-| Validate the DEP0190 spawn fix through a live Windows handoff | High | Pending live validation | ChatGPT/Codex | Claude checks regression risk | None | Live Claude and Codex handoffs complete without the deprecation warning or quoting regressions |
-| Run a real `workspace_write` handoff in a disposable repository | High | Procedure documented; execution pending | ChatGPT/Codex | Claude reviews security, tests, and resulting diff | None | Both directions make bounded changes, run tests, and produce an auditable diff |
+| Validate the DEP0190 spawn fix through a live Windows handoff | High | Pending; Codex run blocked by usage quota until July 20, 2026 at 7:41 PM | ChatGPT/Codex | Claude checks regression risk | None | Live Claude and Codex handoffs complete without the deprecation warning or quoting regressions |
+| Run a real `workspace_write` handoff in a disposable repository | High | Procedure ready; Codex execution blocked by usage quota | ChatGPT/Codex | Claude reviews security, tests, and resulting diff | None | Both directions make bounded changes, run tests, pass guardrail checks, and produce an auditable diff |
 | Add a real development workspace to `bridge.config.json` | High | Awaiting project selection | ChatGPT/Codex | Claude reviews permissions | Select the first real project to enable | Workspace is explicitly allowlisted with minimum necessary access |
 | Add task-store and log retention or rotation | High | Not started | ChatGPT/Codex | Claude reviews privacy impact | None | Runtime data cannot grow indefinitely and retention behavior is documented |
 | Add a status command for health, PID, clients, queue, and failures | High | Not started | ChatGPT/Codex | Claude reviews operational usefulness | None | One command reports actionable bridge state |
@@ -197,9 +214,27 @@ No hosted deployment work should begin beyond architecture, documentation, and r
 5. **JC:** select the first real workspace and the desired distribution direction.
 6. **ChatGPT/Codex and Claude:** proceed with real-project enablement, packaging, cross-platform validation, or hosted deployment according to JC's decisions.
 
+## Claude Handoff — Current Turn
+
+Claude should proceed with the portions of step 3 that do not depend on missing live acceptance evidence:
+
+1. Review `src/adapters/command.ts` and its tests for Windows quoting, argument escaping, shell behavior, timeout handling, and DEP0190 regression risk.
+2. Review the `workspace_write` permission model, workspace allowlisting, injected worker instructions, cancellation behavior, and recursive-delegation protections.
+3. Review `docs/ACCEPTANCE-WORKSPACE-WRITE.md` and identify any missing positive, negative, privacy, cleanup, or audit checks.
+4. Review task-store and log contents for prompt, result, credential, path, and sensitive-project-data exposure risks.
+5. Record recommendations and required changes, clearly separating static findings from items that require live Codex evidence.
+6. Do not grant final acceptance for steps 1 or 2 until Codex access is restored and the task IDs, file diffs, guardrail results, warning output, and worker-process cleanup are available.
+
+Claude's handoff baseline is the latest `main` branch. Commit `169f1294fdd74376f1d1f34d6162de16b88ee197` contains the approved execution plan; the following status commit records this Codex quota blocker and Claude review scope.
+
 ## Current Next Action
 
-Begin Gate A by validating the latest development build on Windows and executing the documented disposable write-enabled acceptance test. The current working runtime must remain available until those tests pass and Claude completes the security review.
+Proceed on two tracks:
+
+- **Claude now:** perform the static architecture, security, privacy, and acceptance-procedure review described above.
+- **ChatGPT/Codex after quota restoration:** rerun execution steps 1 and 2 immediately after Codex access becomes available, then update the acceptance log, Windows log, release notes, and this status file with directly verified evidence.
+
+The current working runtime must remain available and steps 1 and 2 must remain marked pending until both live tests pass.
 
 ## Enhancement Backlog
 
