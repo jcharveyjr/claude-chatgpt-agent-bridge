@@ -210,6 +210,28 @@ See `docs/SECURITY.md` before exposing the HTTP endpoint.
   running tasks are auto-requeued on restart.
 - **Full diagnostics:** `npm run doctor`.
 
+## 11a. Monitoring and retention
+
+Check the broker and queue at any time:
+
+```bash
+npm run status          # human-readable
+node dist/src/cli.js status --json   # machine-readable
+```
+
+It reports health, PID, endpoint, worker availability, queue counts by status,
+running tasks, recent failures, the data directory, and the retention settings.
+
+The task store is pruned automatically so `.agent-bridge` cannot grow without
+bound. Tune it under `retention` in `bridge.config.json`:
+
+- `maxCompletedTasks` (default 500) — keep at most this many terminal tasks.
+- `maxTaskAgeDays` (default 30) — drop terminal tasks older than this.
+- `maxLogFiles` (default 5) — prior-session broker logs to keep on Windows.
+
+Queued and running tasks are never pruned. Set a value to `0` to disable that
+particular limit.
+
 ## 12. Further reading
 
 - `README.md` — overview and quick start.

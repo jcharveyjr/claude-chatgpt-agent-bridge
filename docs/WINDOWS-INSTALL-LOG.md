@@ -48,3 +48,24 @@ Codex's elevated Windows sandbox initially selected the Microsoft Store `pwsh.ex
 - The detached Windows start and stop scripts were exercised successfully. The current login startup entry is `%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup\AgentBridge.cmd`.
 
 The installed project is `C:\Users\JC Harvey\Documents\AgentBridge`. The local health endpoint is `http://127.0.0.1:8787/health`; runtime logs and the detached PID file are under `.agent-bridge`.
+
+## Hardening iteration — July 14, 2026 (Claude implementation track)
+
+Performed in the clean development clone `C:\Users\JC Harvey\Documents\AgentBridge-dev`;
+the known-good runtime at `C:\Users\JC Harvey\Documents\AgentBridge` was not
+touched. Worker timeout/cancellation now terminates the entire process tree
+(Windows `taskkill /T`, POSIX process group) with a force-kill escalation, and
+`stdin` is destroyed on settle so an early-exiting worker cannot leave a dangling
+handle. `doctor` was updated to avoid Node DEP0190 on Windows.
+
+Directly verified on this host (Node v24.15.0): `npm run doctor` PASS (with a
+local gitignored config), `npm run typecheck`, `npm test` (27/27),
+`npm run build`, `npm run smoke:http`, and `npm run coverage` all pass, and
+`agent-bridge status` reported the live broker as healthy.
+
+Not verified this iteration (Codex quota-blocked): live bidirectional read-only
+and `workspace_write` handoffs with real task IDs, and live confirmation that no
+worker process lingers after a real Codex handoff. The `taskkill` tree reaper did
+not emit events inside the Claude Desktop sandbox, so a live check on a normal
+Windows session is recommended; the direct `child.kill()` guarantees the bridge
+promise settles regardless.

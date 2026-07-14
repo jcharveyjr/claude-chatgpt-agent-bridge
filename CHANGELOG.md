@@ -7,6 +7,20 @@ follow semantic versioning.
 ## [Unreleased]
 
 ### Added
+- `agent-bridge status` subcommand reporting broker health, PID, endpoint,
+  worker availability, queue counts by status, running tasks, recent failures,
+  data directory, and retention config, with a `--json` flag.
+- Configurable task-store retention (`retention.maxCompletedTasks`,
+  `retention.maxTaskAgeDays`) enforced on startup and after every task so the
+  store cannot grow without bound. Queued and running tasks are never pruned.
+- Session log rotation on start, bounded by `retention.maxLogFiles`.
+- Code-coverage thresholds via `npm run coverage`
+  (line >= 70, branch >= 65, funcs >= 70) and a Node 22 CI coverage job.
+- Repeatable acceptance harness `scripts/acceptance-harness.ps1`
+  (`prepare` / `verify` / `cleanup`).
+- Expanded tests: process-tree cancellation, stdin/EPIPE robustness, large
+  output, store corruption, retention (count + age), unknown workspace,
+  permission-mode propagation, worker failure, concurrent bursts, and status.
 - `.env` is auto-loaded at startup when present (Node `process.loadEnvFile`, no
   new dependencies). The path can be overridden with `AGENT_BRIDGE_ENV_FILE`.
   Closes the gap where `.env.example` documented variables that were never read.
@@ -19,6 +33,12 @@ follow semantic versioning.
   `docs/HOSTED-DEPLOYMENT.md` (public HTTPS + OAuth setup).
 
 ### Changed
+- Worker timeout and cancellation now terminate the entire worker process tree
+  (Windows `taskkill /T`, POSIX process group) with a force-kill escalation, so
+  no worker (or its grandchildren) is left running. `stdin` is destroyed on
+  settle to avoid a dangling-handle leak, and its `error` events are ignored.
+- `doctor` no longer triggers Node DEP0190 on Windows.
+- `npm test` runs with a 60s per-test timeout so a stuck test fails fast.
 - Worker command timeouts now reject with an explicit
   `Command '<name>' timed out after <N> ms.` error instead of surfacing as a
   generic non-zero exit code, making a slow peer distinguishable from a crash.

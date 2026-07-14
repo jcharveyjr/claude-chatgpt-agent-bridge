@@ -266,6 +266,70 @@ Claude should begin the temporary primary implementation track immediately. Chat
 
 The current working runtime must remain available. Codex-dependent read-only and `workspace_write` acceptance items remain pending until directly verified.
 
+## Claude Implementation Turn — Completed (July 14, 2026)
+
+Directly verified from the clean development clone
+(`C:\Users\JC Harvey\Documents\AgentBridge-dev`). The known-good runtime at
+`C:\Users\JC Harvey\Documents\AgentBridge` was not modified. Commits are local
+and unpushed for ChatGPT review.
+
+Implemented and directly verified (Claude worker + mocked Codex only):
+
+- **`command.ts` hardening.** Worker timeout and cancellation now terminate the
+  entire process tree (Windows `taskkill /T`, POSIX process group) with a
+  force-kill escalation, so no worker or grandchild is left running. `stdin` is
+  destroyed on settle (fixing a dangling-handle hang) and EPIPE is ignored. The
+  DEP0190-safe Windows spawn is retained. New tests: prompt cancellation, stdin
+  robustness, large output, quoting edge cases.
+- **Retention.** Configurable task-store pruning (`retention.maxCompletedTasks`,
+  `retention.maxTaskAgeDays`) on startup and after each task; queued/running
+  tasks are never pruned. Session log rotation on start bounded by
+  `retention.maxLogFiles`.
+- **Status command.** `agent-bridge status` / `npm run status` reports health,
+  PID, endpoint, worker availability, queue counts, running tasks, recent
+  failures, data directory, and retention; `--json` supported. Verified live.
+- **Tests.** 27 total, all passing, including store corruption, retention,
+  unknown workspace, permission-mode propagation, worker failure, large result,
+  and concurrent bursts.
+- **Coverage.** `npm run coverage` enforces line >= 70, branch >= 65,
+  funcs >= 70 (measured 76 / 71 / 79); a Node 22 CI job runs it without weakening
+  the existing typecheck/test/build/smoke gates.
+- **Acceptance harness.** `scripts/acceptance-harness.ps1`
+  (`prepare` / `verify` / `cleanup`); the full lifecycle was exercised directly.
+- **`doctor`** no longer triggers DEP0190 on Windows.
+
+Verification results (dev clone): `npm run doctor` PASS (with a local, gitignored
+`bridge.config.json`), `npm run typecheck` exit 0, `npm test` 27/27 pass,
+`npm run build` exit 0, `npm run smoke:http` PASS, `npm run coverage` exit 0,
+`agent-bridge status` verified against the running broker.
+
+Security and hardening findings:
+
+- Cancellation previously left worker grandchildren running on Windows because
+  only the launcher wrapper was signalled. Fixed with tree termination; a live
+  multi-hop check on a non-sandboxed Windows session is still recommended (the
+  `taskkill` reaper did not fire in the Claude Desktop sandbox, so the direct
+  `child.kill()` guarantees settlement while the tree reaper is best-effort).
+- `status` output and stored errors are truncated (errors to 200 chars) and
+  never print full task text or results; task-store files are written mode 0600.
+  Retention shortens the window that sensitive prompt/result text persists.
+- Workspace allowlisting, source/target separation, delegation-depth and
+  recursive-delegation guards, and per-worker credential isolation were reviewed
+  and remain intact; no regressions introduced.
+- Backup/sharing risk: `.agent-bridge/tasks.json` and rotated logs may contain
+  prompt and result text. Retention plus the `docs/SECURITY.md` review guidance
+  mitigate this, but operators should still review before sharing.
+
+Still requires a live Codex worker (NOT verified this turn):
+
+- Real bidirectional read-only handoffs on this build (task IDs required).
+- Real bidirectional `workspace_write` handoffs with exact diffs and guardrail
+  results.
+- Live confirmation that no worker process lingers after a real handoff
+  (tree-kill verified in unit and cancellation-timing form; provider-path
+  evidence pending).
+- A DEP0190-free live worker launch on Windows.
+
 ## Enhancement Backlog
 
 Candidate improvements beyond the required execution plan are options, not current commitments.
