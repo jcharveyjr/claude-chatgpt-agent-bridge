@@ -2,7 +2,7 @@
 
 **Last updated:** July 14, 2026 (America/Chicago)  
 **Current version:** 0.1.7  
-**Overall status:** Local Windows MVP is complete and operational. The approved execution plan remains in effect. The next two Codex-owned live acceptance steps are currently blocked by the Codex account usage limit and have not been marked complete.
+**Overall status:** Local Windows MVP is complete and operational. Claude is temporarily the primary implementation agent while Codex is quota-blocked. Codex-dependent live acceptance steps remain pending and have not been marked complete.
 
 ## Executive Summary
 
@@ -127,8 +127,9 @@ This section is the approved plan for completing and expanding Agent Bridge. The
 
 ### Ownership model
 
-- **ChatGPT/Codex leads implementation.** This includes source code, tests, CI, scripts, configuration changes, packaging, release preparation, and platform fixes.
-- **Claude provides independent review.** This includes architecture, security, threat modeling, documentation quality, acceptance criteria, and review of material ChatGPT/Codex changes.
+- **Claude temporarily leads implementation while Codex is quota-blocked.** Claude owns source changes, tests, CI, scripts, operational hardening, documentation, packaging preparation, and platform fixes that do not require a live Codex worker.
+- **ChatGPT coordinates and verifies.** ChatGPT maintains the execution plan, directs work, runs Windows and repository checks through available tools, reviews Claude's changes, synchronizes local and GitHub copies, and preserves the known-good runtime.
+- **Codex is temporarily limited to provider-specific validation after access resets.** Codex must later prove its real authenticated read-only and `workspace_write` worker paths and independently review material Claude changes.
 - **JC owns product and access decisions.** JC is not expected to write code. User action is limited to approvals, selecting real workspaces, authenticating external services, and deciding whether the project remains local or becomes a distributed or hosted product.
 - **Delegation remains bounded.** Neither agent may recursively delegate a task received through Agent Bridge.
 
@@ -136,28 +137,28 @@ This section is the approved plan for completing and expanding Agent Bridge. The
 
 | Work item | Priority | Status | Primary owner | Reviewer or support | JC action required | Completion condition |
 | --- | --- | --- | --- | --- | --- | --- |
-| Maintain the clean Git development clone | Immediate | Completed; ongoing discipline | ChatGPT/Codex | Claude may review structure | None | Development occurs in a version-controlled clone and all checks remain green |
-| Preserve local secrets and runtime data outside version control | Immediate | In effect | ChatGPT/Codex | Claude reviews isolation | None | `.env`, `bridge.config.json`, `.agent-bridge`, credentials, and logs remain uncommitted |
-| Inspect the stale v0.1.1 Downloads copy and archive or delete it | Immediate | Not started | ChatGPT/Codex | None | Approve permanent deletion after inspection | Nothing unique remains and the obsolete copy is removed from normal use |
-| Maintain GitHub Actions CI | Immediate | Completed | ChatGPT/Codex | Claude reviews release controls | None | Pushes and pull requests continue to run required checks automatically |
-| Publish the tagged v0.1.7 release | Immediate | Completed | ChatGPT/Codex | Claude reviews notes | None | Tag and release notes document validation and known limits |
-| Validate the DEP0190 spawn fix through a live Windows handoff | High | Pending; Codex run blocked by usage quota until July 20, 2026 at 7:41 PM | ChatGPT/Codex | Claude checks regression risk | None | Live Claude and Codex handoffs complete without the deprecation warning or quoting regressions |
-| Run a real `workspace_write` handoff in a disposable repository | High | Procedure ready; Codex execution blocked by usage quota | ChatGPT/Codex | Claude reviews security, tests, and resulting diff | None | Both directions make bounded changes, run tests, pass guardrail checks, and produce an auditable diff |
-| Add a real development workspace to `bridge.config.json` | High | Awaiting project selection | ChatGPT/Codex | Claude reviews permissions | Select the first real project to enable | Workspace is explicitly allowlisted with minimum necessary access |
-| Add task-store and log retention or rotation | High | Not started | ChatGPT/Codex | Claude reviews privacy impact | None | Runtime data cannot grow indefinitely and retention behavior is documented |
-| Add a status command for health, PID, clients, queue, and failures | High | Not started | ChatGPT/Codex | Claude reviews operational usefulness | None | One command reports actionable bridge state |
-| Review task records and logs for sensitive-content handling | High | Not started | Claude | ChatGPT/Codex applies findings | None | Storage, backup, sharing, and cleanup guidance protects delegated information |
-| Add automated coverage reporting and a minimum threshold | Medium | Not started | ChatGPT/Codex | Claude reviews meaningful coverage | None | CI reports coverage and enforces an agreed baseline |
-| Add malformed-output, large-result, timeout-recovery, corruption, and concurrency tests | Medium | Partially started through timeout tests | ChatGPT/Codex | Claude identifies missing cases | None | Critical failure modes have repeatable automated tests |
-| Validate installation on macOS and Linux | Medium | Not started | ChatGPT/Codex | Claude reviews cross-platform assumptions | Provide access only if no suitable environment is available | Installation and acceptance results are documented for each platform |
-| Maintain changelog and versioning guidance | Medium | Changelog completed; process remains ongoing | ChatGPT/Codex | Claude reviews documentation | None | Every future release follows a consistent version and change-record process |
+| Maintain the clean Git development clone | Immediate | Completed; ongoing discipline | Claude | ChatGPT verifies repository state | None | Development occurs in a version-controlled clone and all checks remain green |
+| Preserve local secrets and runtime data outside version control | Immediate | In effect | Claude | ChatGPT verifies Git status; Codex reviews later | None | `.env`, `bridge.config.json`, `.agent-bridge`, credentials, and logs remain uncommitted |
+| Inspect the stale v0.1.1 Downloads copy and archive or delete it | Immediate | Not started | ChatGPT | Claude may compare contents | Approve permanent deletion after inspection | Nothing unique remains and the obsolete copy is removed from normal use |
+| Maintain GitHub Actions CI | Immediate | Completed | Claude | ChatGPT verifies workflow results; Codex reviews later | None | Pushes and pull requests continue to run required checks automatically |
+| Publish and maintain releases | Immediate | v0.1.7 completed | Claude | ChatGPT verifies release state; Codex reviews later | None | Release notes document validation evidence and known limits accurately |
+| Validate the DEP0190 spawn fix through a live Windows handoff | High | Pending; Codex path blocked by usage quota until July 20, 2026 at 7:41 PM | ChatGPT/Codex | Claude prepares and reviews test evidence | None | Live Claude and Codex handoffs complete without the deprecation warning or quoting regressions |
+| Run real bidirectional `workspace_write` handoffs in a disposable repository | High | Procedure ready; Codex side blocked by usage quota | ChatGPT/Codex | Claude prepares automation and reviews security and diffs | None | Both directions make bounded changes, run tests, pass guardrail checks, and produce an auditable diff |
+| Add a real development workspace to `bridge.config.json` | High | Awaiting project selection | Claude | ChatGPT verifies permissions; Codex reviews later | Select the first real project to enable | Workspace is explicitly allowlisted with minimum necessary access |
+| Add task-store and log retention or rotation | High | Not started | Claude | ChatGPT verifies behavior; Codex reviews later | None | Runtime data cannot grow indefinitely and retention behavior is documented |
+| Add a status command for health, PID, clients, queue, and failures | High | Not started | Claude | ChatGPT performs live Windows verification | None | One command reports actionable bridge state |
+| Review and harden sensitive-content handling in task records and logs | High | Not started | Claude | ChatGPT verifies implementation; Codex reviews later | None | Storage, backup, sharing, redaction, and cleanup behavior protects delegated information |
+| Add automated coverage reporting and a minimum threshold | Medium | Not started | Claude | ChatGPT verifies CI; Codex reviews later | None | CI reports coverage and enforces an agreed baseline |
+| Add malformed-output, large-result, timeout-recovery, corruption, and concurrency tests | Medium | Partially started through timeout tests | Claude | ChatGPT verifies test execution; Codex reviews later | None | Critical failure modes have repeatable automated tests |
+| Validate installation on macOS and Linux | Medium | Not started | Claude | ChatGPT coordinates environments; Codex reviews platform assumptions later | Provide access only if no suitable environment is available | Installation and acceptance results are documented for each platform |
+| Maintain changelog and versioning guidance | Medium | Changelog completed; process remains ongoing | Claude | ChatGPT verifies release documentation | None | Every future release follows a consistent version and change-record process |
 | Choose the distribution model | Medium | Decision pending | JC | ChatGPT and Claude provide recommendations | Choose source-only, ZIP, installer, npm package, Docker image, hosted service, or another format | Packaging work has a defined target |
-| Build the selected package or installer | Medium | Blocked by distribution decision | ChatGPT/Codex | Claude reviews installation and security | None after JC's decision | Selected artifact installs cleanly and passes acceptance checks |
+| Build the selected package or installer | Medium | Blocked by distribution decision | Claude | ChatGPT verifies installation; Codex reviews later | None after JC's decision | Selected artifact installs cleanly and passes acceptance checks |
 | Decide whether to pursue hosted and web deployment | Optional | Decision pending | JC | ChatGPT and Claude provide tradeoffs | Approve scope, intended users, and budget | A documented local-only or hosted direction is selected |
-| Deploy a public HTTPS broker | Optional | Guide completed; deployment not started | ChatGPT/Codex | Claude reviews architecture and threat model | Approve hosting provider, hostname, and cost | Broker is securely reachable through HTTPS with rollback available |
-| Configure hosted OAuth and connector access | Optional | Not started | ChatGPT/Codex | Claude reviews authentication boundaries | Authenticate accounts and approve provider choices | OAuth validation and connector access work end to end |
-| Connect ChatGPT web and Claude web/Cowork | Optional | Not started | ChatGPT and Claude | Each agent validates its own integration | Authorize account access where required | Both web surfaces can submit and retrieve bounded bridge tasks |
-| Add a durable database, observability, rate limits, backups, and rollback | Optional | Not started | ChatGPT/Codex | Claude reviews production readiness | Approve hosted scope and cost | Hosted system meets the agreed reliability and security standard |
+| Deploy a public HTTPS broker | Optional | Guide completed; deployment not started | Claude | ChatGPT coordinates access and verifies; Codex reviews later | Approve hosting provider, hostname, and cost | Broker is securely reachable through HTTPS with rollback available |
+| Configure hosted OAuth and connector access | Optional | Not started | Claude | ChatGPT coordinates authentication and verifies; Codex reviews later | Authenticate accounts and approve provider choices | OAuth validation and connector access work end to end |
+| Connect ChatGPT web and Claude web/Cowork | Optional | Not started | ChatGPT and Claude | Each agent validates its own integration; Codex validates CLI path later | Authorize account access where required | Both web surfaces can submit and retrieve bounded bridge tasks |
+| Add a durable database, observability, rate limits, backups, and rollback | Optional | Not started | Claude | ChatGPT verifies operations; Codex reviews later | Approve hosted scope and cost | Hosted system meets the agreed reliability and security standard |
 
 ### JC responsibilities
 
@@ -169,33 +170,44 @@ JC is responsible for decisions and authorization, not implementation:
 4. Decide whether Agent Bridge should remain a local personal tool or proceed to hosted and web deployment.
 5. For hosted deployment, approve the hosting provider, public hostname, OAuth provider, intended users, and budget, then authenticate any required accounts.
 
-### ChatGPT/Codex responsibilities
+### Claude responsibilities — temporary primary implementation track
 
-ChatGPT/Codex owns the implementation track:
+Until Codex access is restored, Claude owns all work that can be completed without a live Codex worker:
 
-1. Preserve the working runtime while developing in the clean Git clone.
-2. Perform live Windows validation of the latest process-spawn changes.
-3. Execute controlled write-enabled acceptance testing.
-4. Implement status, retention, warning, test, coverage, packaging, and cross-platform improvements.
-5. Keep changes small, testable, documented, and suitable for Claude's independent review.
-6. Prepare future releases and apply findings from Claude's reviews.
+1. Preserve the known-good runtime while developing only in the clean Git clone.
+2. Review and improve Windows command spawning, quoting, timeout handling, workspace isolation, and permission boundaries.
+3. Implement task-store and log retention, the status command, sensitive-data protections, expanded tests, coverage, CI improvements, and documentation updates.
+4. Prepare repeatable acceptance automation and the disposable workspace so the remaining live provider tests require minimal manual work.
+5. Run `npm run doctor`, `npm run typecheck`, `npm test`, `npm run build`, and `npm run smoke:http` after material changes.
+6. Commit changes in small, reviewable units and clearly distinguish directly verified results from tests blocked by Codex quota.
+7. Do not replace the known-good runtime or claim final Codex-path acceptance without live evidence.
 
-### Claude responsibilities
+### ChatGPT responsibilities — coordination and verification track
 
-Claude owns the independent review track:
+ChatGPT owns project coordination and independent operational verification:
 
-1. Review write-enabled delegation, filesystem isolation, workspace restrictions, and permission boundaries.
-2. Review credential isolation, environment handling, task records, logs, retention, backup, and sharing risks.
-3. Threat-model recursive delegation, prompt injection, malicious task content, task-store exposure, hosted authentication, and multi-user operation.
-4. Review material pull requests, tests, documentation, acceptance criteria, and release notes.
-5. Identify missing architectural and failure-mode tests before future releases are considered complete.
-6. Confirm that published documentation matches actual behavior and limitations.
+1. Maintain `PROJECT_STATUS.md`, the responsibility matrix, and the handoff sequence.
+2. Direct Claude's work and review repository diffs, documentation, and claimed outcomes.
+3. Run available Windows, Git, health, build, and test checks through connected tools.
+4. Keep the active runtime operational and synchronize approved changes between the development clone, GitHub, and runtime documentation.
+5. Record blockers and evidence honestly and prevent unverified tests from being marked complete.
+6. Coordinate JC decisions, external authentication, and the later Codex validation run.
+
+### Codex responsibilities — after quota restoration
+
+Codex is temporarily removed from general implementation. After access resets, Codex must:
+
+1. Complete real authenticated Claude-to-Codex and Codex-to-Claude read-only handoffs using the latest development build.
+2. Complete real authenticated `workspace_write` handoffs in both directions in the disposable repository.
+3. Verify exact file contents, Git diffs, guardrail failures, warning output, test execution, and worker-process cleanup.
+4. Independently review material Claude implementation changes and identify regressions or missing tests.
+5. Update the acceptance records only with directly observed task IDs and results.
 
 ### Decision gates
 
 #### Gate A — Work that can proceed without JC input
 
-ChatGPT/Codex may proceed with live Windows validation, the disposable write test, the status command, retention, sensitive-data improvements, expanded tests, coverage, cross-platform preparation, and future release maintenance. Claude should review the security-sensitive and release-sensitive portions.
+Claude may proceed with all non-Codex-dependent implementation and review work, including static Windows spawn review, acceptance automation, the status command, retention, sensitive-data improvements, expanded tests, coverage, CI maintenance, cross-platform preparation, and documentation. ChatGPT coordinates and verifies these changes. Live Codex-path validation remains deferred until quota restoration.
 
 #### Gate B — JC approval or selection required
 
@@ -207,34 +219,43 @@ No hosted deployment work should begin beyond architecture, documentation, and r
 
 ### Execution order
 
-1. **ChatGPT/Codex:** validate the current development build through live Windows read-only handoffs and confirm that the DEP0190 fix introduces no regression.
-2. **ChatGPT/Codex:** create or use a disposable repository and run bidirectional `workspace_write` acceptance tests according to `docs/ACCEPTANCE-WORKSPACE-WRITE.md`.
-3. **Claude:** review write-mode security, workspace isolation, task records, logs, tests, and resulting diffs.
-4. **ChatGPT/Codex:** apply review findings and implement retention, status reporting, expanded tests, and coverage.
-5. **JC:** select the first real workspace and the desired distribution direction.
-6. **ChatGPT/Codex and Claude:** proceed with real-project enablement, packaging, cross-platform validation, or hosted deployment according to JC's decisions.
+1. **Claude:** inspect the current implementation and complete all static architecture, security, privacy, command-spawn, workspace-write, and acceptance-procedure review work.
+2. **Claude:** implement the highest-priority non-Codex-dependent work: retention and rotation, status reporting, sensitive-data protections, expanded failure-mode tests, coverage, CI improvements, and acceptance automation.
+3. **Claude:** run the complete verification suite, update documentation and acceptance preparation, and commit changes in small reviewable units without replacing the known-good runtime.
+4. **ChatGPT:** review Claude's diffs and claims, run available Windows and repository verification, synchronize approved documentation, and record any remaining defects or blockers.
+5. **Codex after quota restoration:** run the real bidirectional read-only and `workspace_write` provider acceptance tests and independently review Claude's material changes.
+6. **Claude and ChatGPT:** apply valid Codex findings and close the live acceptance items using task IDs, exact diffs, guardrail results, warning output, and cleanup evidence.
+7. **JC:** select the first real workspace and desired distribution direction before real-project write access or packaging begins.
 
 ## Claude Handoff — Current Turn
 
-Claude should proceed with the portions of step 3 that do not depend on missing live acceptance evidence:
+Claude is temporarily the primary implementation agent. Work from the latest `main` branch in the clean development clone and proceed without waiting for Codex on anything that does not require a live Codex worker.
 
-1. Review `src/adapters/command.ts` and its tests for Windows quoting, argument escaping, shell behavior, timeout handling, and DEP0190 regression risk.
-2. Review the `workspace_write` permission model, workspace allowlisting, injected worker instructions, cancellation behavior, and recursive-delegation protections.
-3. Review `docs/ACCEPTANCE-WORKSPACE-WRITE.md` and identify any missing positive, negative, privacy, cleanup, or audit checks.
-4. Review task-store and log contents for prompt, result, credential, path, and sensitive-project-data exposure risks.
-5. Record recommendations and required changes, clearly separating static findings from items that require live Codex evidence.
-6. Do not grant final acceptance for steps 1 or 2 until Codex access is restored and the task IDs, file diffs, guardrail results, warning output, and worker-process cleanup are available.
+Required work:
 
-Claude's handoff baseline is the latest `main` branch. Commit `169f1294fdd74376f1d1f34d6162de16b88ee197` contains the approved execution plan; the following status commit records this Codex quota blocker and Claude review scope.
+1. Review `PROJECT_STATUS.md`, `AGENTS.md`, `CLAUDE.md`, `README.md`, `docs/DEVELOPMENT.md`, `docs/ACCEPTANCE-WORKSPACE-WRITE.md`, `docs/WINDOWS-INSTALL-LOG.md`, `docs/SECURITY.md`, and the relevant source and tests.
+2. Audit `src/adapters/command.ts` and its tests for Windows quoting, argument escaping, shell behavior, timeout handling, process cleanup, and DEP0190 regression risk. Fix defects and add tests where possible without invoking Codex.
+3. Audit and harden `workspace_write`, workspace allowlisting, injected worker instructions, cancellation, recursive-delegation prevention, task storage, logging, backups, and sensitive-data handling.
+4. Implement task and log retention or rotation and a useful status command covering health, PID, queue state, worker availability, and recent failures.
+5. Expand automated tests for malformed output, large results, timeout recovery, store corruption, concurrent task bursts, cleanup, and guardrail behavior.
+6. Add automated coverage reporting with a defensible initial threshold and integrate it into CI without weakening existing checks.
+7. Improve `docs/ACCEPTANCE-WORKSPACE-WRITE.md` and, where practical, add repeatable scripts that prepare the disposable repository and verify results and guardrails. Do not claim the Codex side passed.
+8. Run `npm run doctor`, `npm run typecheck`, `npm test`, `npm run build`, and `npm run smoke:http` after changes.
+9. Update `PROJECT_STATUS.md`, `CHANGELOG.md`, relevant release notes, Windows or acceptance logs, and any user or developer documentation affected by the changes.
+10. Commit changes to the current branch in small, clear commits. Do not push unless explicitly instructed. Do not modify the active known-good runtime.
+
+Required reporting:
+
+- Separate completed implementation from recommendations.
+- List changed files, tests, exact command results, commit SHAs, and unresolved blockers.
+- Clearly label every item that still requires a real Codex worker.
+- Do not mark the DEP0190 live handoff or bidirectional `workspace_write` acceptance complete without task IDs and direct evidence.
 
 ## Current Next Action
 
-Proceed on two tracks:
+Claude should begin the temporary primary implementation track immediately. ChatGPT will verify and synchronize Claude's work after the handoff. When Codex access returns, Codex will perform only the live provider-specific acceptance tests and an independent review of Claude's material changes.
 
-- **Claude now:** perform the static architecture, security, privacy, and acceptance-procedure review described above.
-- **ChatGPT/Codex after quota restoration:** rerun execution steps 1 and 2 immediately after Codex access becomes available, then update the acceptance log, Windows log, release notes, and this status file with directly verified evidence.
-
-The current working runtime must remain available and steps 1 and 2 must remain marked pending until both live tests pass.
+The current working runtime must remain available. Codex-dependent read-only and `workspace_write` acceptance items remain pending until directly verified.
 
 ## Enhancement Backlog
 
