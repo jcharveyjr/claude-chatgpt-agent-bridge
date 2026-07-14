@@ -106,6 +106,14 @@ This iteration was reviewed and validated from a clean clone (`npm run typecheck
 - **CI** — `.github/workflows/ci.yml` (typecheck, test, build, smoke on Node 20 & 22).
 - **Docs** — `CHANGELOG.md`, `RELEASE_NOTES-v0.1.7.md`,
   `docs/ACCEPTANCE-WORKSPACE-WRITE.md`, and `docs/HOSTED-DEPLOYMENT.md`.
+- **`setup-local` omit=dev fix** — `scripts/setup-local.mjs` now installs
+  devDependencies with `--include=dev`, so setup works even when npm is set to
+  `omit=dev` or `NODE_ENV=production`.
+- **Local development clone** established and validated on Windows (typecheck,
+  13/13 tests, build all pass); see `docs/DEVELOPMENT.md`.
+- **v0.1.7 released** — tag and GitHub Release published at
+  https://github.com/jcharveyjr/claude-chatgpt-agent-bridge/releases/tag/v0.1.7
+- **User guide** added: `docs/USER_GUIDE.md`.
 
 ## What Needs To Be Done
 
@@ -117,7 +125,7 @@ This iteration was reviewed and validated from a clean clone (`npm run typecheck
    - After validation, point the startup entry to the version-controlled installation or keep the runtime and source clone intentionally separate.
 2. **Archive or delete the stale v0.1.1 Downloads copy** after confirming nothing unique remains in it.
 3. **Add GitHub Actions CI** to run type checking, tests, and production build on pushes and pull requests. — DONE: `.github/workflows/ci.yml` runs typecheck, test, build, and the HTTP smoke test on Node 20 and 22 for pushes and pull requests.
-4. **Create a tagged v0.1.7 release** with the Windows acceptance results and installation notes. — IN PROGRESS: release notes prepared in `RELEASE_NOTES-v0.1.7.md`; create the git tag and GitHub release to finish (the commit connector cannot create tags/releases, so this is a manual/`gh` step).
+4. **Create a tagged v0.1.7 release** with the Windows acceptance results and installation notes. — DONE: released as `v0.1.7` (https://github.com/jcharveyjr/claude-chatgpt-agent-bridge/releases/tag/v0.1.7); notes in `RELEASE_NOTES-v0.1.7.md`. Cut with a local `git tag` + `gh release create`.
 
 ### Priority 1 — Complete local production hardening
 
@@ -145,6 +153,53 @@ This iteration was reviewed and validated from a clean clone (`npm run typecheck
 5. Replace or supplement the JSON task store with a durable database before supporting multiple hosts or users.
 6. Add hosted observability, rate limiting, backups, and deployment rollback procedures.
 
+## Enhancement Backlog (Ideas)
+
+Candidate improvements beyond the current MVP, grouped by theme. These are
+options, not commitments.
+
+### Reliability and scale
+- Replace the JSON task store with SQLite for safe concurrency, richer queries,
+  and multi-host readiness.
+- Task and log retention/rotation so `.agent-bridge` does not grow without bound.
+- Optional automatic retry on transient worker failures; idempotency keys on
+  `delegate_task` to avoid duplicate submissions.
+- Configurable per-agent concurrency (currently strictly serial per agent).
+
+### Observability
+- Structured JSON logging with levels.
+- A `/metrics` endpoint (queue depth, task durations, success/failure rates).
+- A `status` CLI subcommand (broker health, PID, connected clients, queued
+  tasks, recent failures).
+- A live task dashboard (Cowork artifact or a small web UI).
+
+### Capabilities
+- Additional worker adapters (for example Gemini CLI or local models via Ollama)
+  through the existing generic command adapter.
+- Task priorities and simple scheduling; task dependencies/chaining.
+- File/artifact results, not just text.
+- Completion webhooks/notifications (Slack, email).
+- Optional post-write verification hook (auto-run tests after `workspace_write`).
+
+### Security and hardening
+- Per-client OAuth scopes mapped to allowed workspaces; rate limiting; audit log.
+- Secret scanning of task text before dispatch to a worker.
+- Containerized/sandboxed workers.
+
+### Packaging and developer experience
+- Add a Windows runner to CI so the Windows spawn path is exercised automatically
+  (validates the DEP0190 fix on every push).
+- Expand tests: malformed worker output, large results, timeout recovery, store
+  corruption, concurrent bursts.
+- Publish as an npm package / `npx`-runnable and/or a Docker image (the package is
+  currently `private`).
+- Cross-platform CI matrix (macOS and Windows in addition to Linux).
+
+### Hosted and web
+- Complete the public HTTPS + OAuth deployment (`docs/HOSTED-DEPLOYMENT.md`) to
+  bring in ChatGPT Work and Claude web/Cowork.
+- Multi-tenant support and a durable database before multi-user operation.
+
 ## Recommended Next Action
 
 Use the public GitHub repository to create a clean local clone, add CI, and perform a write-enabled acceptance test in a disposable workspace. No additional user decision is required to begin those local engineering tasks.
@@ -159,7 +214,7 @@ A user decision is required before hosted deployment because it needs a public h
 
 ## Resume Checklist
 
-1. Read `README.md`, `AGENTS.md`, `CLAUDE.md`, `PROJECT_STATUS.md`, `CHANGELOG.md`, `RELEASE_NOTES-v0.1.7.md`, `docs/WINDOWS-INSTALL-LOG.md`, `docs/ACCEPTANCE-WORKSPACE-WRITE.md`, and `docs/HOSTED-DEPLOYMENT.md`.
+1. Read `README.md`, `AGENTS.md`, `CLAUDE.md`, `PROJECT_STATUS.md`, `CHANGELOG.md`, `RELEASE_NOTES-v0.1.7.md`, `docs/WINDOWS-INSTALL-LOG.md`, `docs/USER_GUIDE.md`, `docs/DEVELOPMENT.md`, `docs/ACCEPTANCE-WORKSPACE-WRITE.md`, and `docs/HOSTED-DEPLOYMENT.md`.
 2. Confirm the active directory and avoid the stale Downloads copy.
 3. Run:
 

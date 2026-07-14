@@ -4,6 +4,12 @@ Agent Bridge is a working MCP task broker that lets Claude and Codex/ChatGPT age
 
 The linked Cognito Forms video demonstrates a useful shared-tool pattern: both AI products connect to one external MCP-backed system. Agent Bridge extends that pattern with a task queue and worker adapters, because sharing a connector alone does not create agent-to-agent delegation.
 
+## Documentation
+
+New here? Start with the [User Guide](docs/USER_GUIDE.md). See also the
+[Development workflow](docs/DEVELOPMENT.md), [Setup Tutorial](docs/TUTORIAL.md),
+and [Validation and Compatibility](docs/VALIDATION.md).
+
 ## Current Status
 
 - Working MCP server over local stdio and remote-capable Streamable HTTP
