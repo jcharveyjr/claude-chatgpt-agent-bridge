@@ -83,11 +83,29 @@ The task store currently contains three acceptance records: two completed bidire
 | Health endpoint | Passed |
 | `npm run doctor` | Passed |
 | `npm run typecheck` | Passed |
-| `npm test` | 11 of 11 passed |
+| `npm test` | 13 of 13 passed |
 | `npm run build` | Passed |
 | `npm run smoke:http` | Passed |
 | Claude MCP connection | Connected |
 | Codex MCP registration | Enabled |
+
+## Recently Completed (July 14, 2026 — engineering iteration)
+
+This iteration was reviewed and validated from a clean clone (`npm run typecheck`,
+`npm test` = 13 of 13, `npm run build`, `npm run smoke:http` all pass).
+
+- **`.env` auto-load** at startup (`src/cli.ts`, Node `process.loadEnvFile`,
+  overridable via `AGENT_BRIDGE_ENV_FILE`). Closes the gap where `.env.example`
+  documented variables that were never read.
+- **Clear worker timeouts** — `runCommand` now rejects with
+  `Command '<name>' timed out after <N> ms.` instead of a generic non-zero exit
+  code, with test coverage.
+- **Node DEP0190 fix** — the Windows worker spawn no longer passes an args array
+  with `shell: true`; the command line is pre-composed and safely quoted
+  (`buildWindowsShellCommand`, unit-tested). Pending live Windows validation.
+- **CI** — `.github/workflows/ci.yml` (typecheck, test, build, smoke on Node 20 & 22).
+- **Docs** — `CHANGELOG.md`, `RELEASE_NOTES-v0.1.7.md`,
+  `docs/ACCEPTANCE-WORKSPACE-WRITE.md`, and `docs/HOSTED-DEPLOYMENT.md`.
 
 ## What Needs To Be Done
 
@@ -98,17 +116,17 @@ The task store currently contains three acceptance records: two completed bidire
    - Keep `bridge.config.json`, `.env`, and `.agent-bridge` local and uncommitted.
    - After validation, point the startup entry to the version-controlled installation or keep the runtime and source clone intentionally separate.
 2. **Archive or delete the stale v0.1.1 Downloads copy** after confirming nothing unique remains in it.
-3. **Add GitHub Actions CI** to run type checking, tests, and production build on pushes and pull requests.
-4. **Create a tagged v0.1.7 release** with the Windows acceptance results and installation notes.
+3. **Add GitHub Actions CI** to run type checking, tests, and production build on pushes and pull requests. — DONE: `.github/workflows/ci.yml` runs typecheck, test, build, and the HTTP smoke test on Node 20 and 22 for pushes and pull requests.
+4. **Create a tagged v0.1.7 release** with the Windows acceptance results and installation notes. — IN PROGRESS: release notes prepared in `RELEASE_NOTES-v0.1.7.md`; create the git tag and GitHub release to finish (the commit connector cannot create tags/releases, so this is a manual/`gh` step).
 
 ### Priority 1 — Complete local production hardening
 
-1. Run a real `workspace_write` handoff against a disposable test repository and verify the resulting diff, approvals, and test execution.
+1. Run a real `workspace_write` handoff against a disposable test repository and verify the resulting diff, approvals, and test execution. — DOCUMENTED: step-by-step procedure and pass criteria in `docs/ACCEPTANCE-WORKSPACE-WRITE.md`; execute on a host with authenticated `claude`/`codex` CLIs.
 2. Add at least one real development workspace to `bridge.config.json` when cross-agent coding is ready to begin.
 3. Add log and task-store retention or rotation so `.agent-bridge` does not grow indefinitely.
 4. Add a simple status command that reports broker health, PID, connected clients, queued tasks, and recent failures.
 5. Review generated task records and logs before sharing or backing them up because delegated prompts and results may contain project information.
-6. Resolve the Node deprecation warning in the Windows-aware command check without reintroducing launcher or quoting failures.
+6. Resolve the Node deprecation warning in the Windows-aware command check without reintroducing launcher or quoting failures. — FIXED IN CODE: `src/adapters/command.ts` no longer passes an args array with `shell: true` (Node DEP0190); the Windows command line is pre-composed and safely quoted via `buildWindowsShellCommand`, with unit-test coverage. Validate the live Windows handoff before release.
 
 ### Priority 2 — Improve release quality
 
@@ -116,11 +134,11 @@ The task store currently contains three acceptance records: two completed bidire
 2. Add tests for malformed worker output, large results, timeout recovery, store corruption, and concurrent task bursts.
 3. Validate installation on macOS and Linux in addition to Windows.
 4. Decide whether to publish an npm package, downloadable release archive, or installer; `package.json` is currently marked private.
-5. Add changelog and versioning guidance for future releases.
+5. Add changelog and versioning guidance for future releases. — DONE: `CHANGELOG.md` added (Keep a Changelog style).
 
 ### Priority 3 — Optional hosted and web integration
 
-1. Deploy the HTTP broker behind public HTTPS.
+1. Deploy the HTTP broker behind public HTTPS. — GUIDE ADDED: `docs/HOSTED-DEPLOYMENT.md` documents the HTTPS + OAuth setup and the decisions required from the user.
 2. Configure an OAuth issuer, audience, JWKS URL, scopes, and public protected-resource metadata.
 3. Connect ChatGPT web/workspace surfaces through an approved remote MCP app or plugin.
 4. Connect Claude web/Cowork through a remote custom connector.
@@ -141,7 +159,7 @@ A user decision is required before hosted deployment because it needs a public h
 
 ## Resume Checklist
 
-1. Read `README.md`, `AGENTS.md`, `CLAUDE.md`, `PROJECT_STATUS.md`, and `docs/WINDOWS-INSTALL-LOG.md`.
+1. Read `README.md`, `AGENTS.md`, `CLAUDE.md`, `PROJECT_STATUS.md`, `CHANGELOG.md`, `RELEASE_NOTES-v0.1.7.md`, `docs/WINDOWS-INSTALL-LOG.md`, `docs/ACCEPTANCE-WORKSPACE-WRITE.md`, and `docs/HOSTED-DEPLOYMENT.md`.
 2. Confirm the active directory and avoid the stale Downloads copy.
 3. Run:
 

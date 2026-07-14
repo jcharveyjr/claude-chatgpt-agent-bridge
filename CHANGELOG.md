@@ -11,11 +11,21 @@ follow semantic versioning.
   new dependencies). The path can be overridden with `AGENT_BRIDGE_ENV_FILE`.
   Closes the gap where `.env.example` documented variables that were never read.
 - Test coverage for the worker command timeout path.
+- GitHub Actions CI (`.github/workflows/ci.yml`) running type check, tests,
+  build, and the HTTP smoke test on Node 20 and 22 for pushes and pull requests.
+- `buildWindowsShellCommand` helper (exported) with unit-test coverage.
+- Documentation: `CHANGELOG.md`, `RELEASE_NOTES-v0.1.7.md`,
+  `docs/ACCEPTANCE-WORKSPACE-WRITE.md` (write-mode handoff procedure), and
+  `docs/HOSTED-DEPLOYMENT.md` (public HTTPS + OAuth setup).
 
 ### Changed
 - Worker command timeouts now reject with an explicit
   `Command '<name>' timed out after <N> ms.` error instead of surfacing as a
   generic non-zero exit code, making a slow peer distinguishable from a crash.
+- Windows worker spawn no longer passes an args array together with
+  `shell: true`; the command line is pre-composed and safely quoted. This
+  resolves Node's DEP0190 deprecation. (Validate on a Windows host before
+  release; behavior on non-Windows platforms is unchanged.)
 - `.env.example` documents the new auto-load behavior.
 
 ## [0.1.7] - 2026-07-13
