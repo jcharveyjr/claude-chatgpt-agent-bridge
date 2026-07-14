@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { copyFile, readFile, writeFile } from "node:fs/promises";
+import { access, copyFile, readFile, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -119,12 +119,52 @@ async function configureWorkspace(options) {
     }
   }
 
+  let changed = false;
   if (options.workspaceName && options.workspacePath) {
     config.workspaces ??= {};
     config.workspaces[options.workspaceName] = options.workspacePath;
     config.defaultWorkspace = options.workspaceName;
-    await writeFile(configPath, `${JSON.stringify(config, null, 2)}\n`, "utf8");
+    changed = true;
     process.stdout.write(`SET   default workspace '${options.workspaceName}' -> ${options.workspacePath}\n`);
+  }
+
+  const nativeCodex = await findWindowsCodexNative();
+  if (nativeCodex) {
+    config.agents ??= {};
+    config.agents.codex ??= {};
+    if (config.agents.codex.command !== nativeCodex) {
+      config.agents.codex.command = nativeCodex;
+      changed = true;
+      process.stdout.write(`SET   native Codex worker -> ${nativeCodex}\n`);
+    }
+  }
+
+  if (changed) await writeFile(configPath, `${JSON.stringify(config, null, 2)}\n`, "utf8");
+}
+
+async function findWindowsCodexNative() {
+  if (process.platform !== "win32") return undefined;
+  const npmRoot = run("npm", ["root", "-g"], { allowFailure: true, capture: true });
+  if (npmRoot.error || npmRoot.status !== 0) return undefined;
+  const root = `${npmRoot.stdout ?? ""}`.trim().split(/\r?\n/).at(-1);
+  if (!root) return undefined;
+  const candidate = resolve(
+    root,
+    "@openai",
+    "codex",
+    "node_modules",
+    "@openai",
+    "codex-win32-x64",
+    "vendor",
+    "x86_64-pc-windows-msvc",
+    "bin",
+    "codex.exe"
+  );
+  try {
+    await access(candidate);
+    return candidate;
+  } catch {
+    return undefined;
   }
 }
 

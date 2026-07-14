@@ -2,6 +2,8 @@
 
 This tutorial starts with the fully local configuration and then extends it to ChatGPT Work and Claude Cowork.
 
+For the recorded Windows installation, real two-direction handoffs, and compatibility corrections through version 0.1.7, see [Windows Installation Log](WINDOWS-INSTALL-LOG.md).
+
 ## Phase 1: Install the Local Bridge
 
 ### 1. Install prerequisites
@@ -23,7 +25,7 @@ From this repository, run the repeatable setup command:
 node .\scripts\setup-local.mjs
 ```
 
-It checks Node.js, Claude Code, and Codex; installs dependencies; creates the safe loopback config if one does not exist; synchronizes skills; type-checks, tests, and builds the project; starts the compiled server on a temporary loopback port for a health check; registers `agent-bridge` with both CLIs; and runs the installation doctor. Existing config and MCP registrations are preserved.
+It checks Node.js, Claude Code, and Codex; installs dependencies; creates the safe loopback config if one does not exist; selects the native `codex.exe` worker on Windows; synchronizes skills; type-checks, tests, and builds the project; starts the compiled server on a temporary loopback port for a health check; registers `agent-bridge` with both CLIs; and runs the installation doctor. Existing workspaces and MCP registrations are preserved.
 
 To allow a project folder and make it the default workspace in the same run:
 
@@ -106,6 +108,15 @@ npm run start:http
 
 Leave this process running while Claude and Codex work. Verify `http://127.0.0.1:8787/health` returns an `ok` response.
 
+On Windows, start or stop a hidden detached broker with:
+
+```powershell
+npm run start:windows
+npm run stop:windows
+```
+
+To start it automatically at sign-in, place a small command file in `%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup` that invokes `scripts\start-agent-bridge.ps1`. The completed installation uses `AgentBridge.cmd`; the start script is idempotent and exits successfully if the health endpoint is already up. Logs and `bridge.pid` are written under `.agent-bridge`.
+
 ### 3. Connect Claude Code
 
 Copy `configs/claude-local.mcp.example.json` to the project root as `.mcp.json`.
@@ -113,7 +124,7 @@ Copy `configs/claude-local.mcp.example.json` to the project root as `.mcp.json`.
 Alternatively, add it with the Claude CLI:
 
 ```bash
-claude mcp add --transport http agent-bridge http://127.0.0.1:8787/mcp
+claude mcp add --scope user --transport http agent-bridge http://127.0.0.1:8787/mcp
 ```
 
 Run `claude mcp list` and confirm `agent-bridge` is connected.
@@ -127,6 +138,15 @@ You can also add it from the CLI:
 ```bash
 codex mcp add agent-bridge --url http://127.0.0.1:8787/mcp
 ```
+
+Allow only the safe task-submission tool to run noninteractively by adding this to the Codex configuration after registration:
+
+```toml
+[mcp_servers.agent-bridge.tools.delegate_task]
+approval_mode = "approve"
+```
+
+Keep `cancel_task` and other state-changing tools on their normal approval policy.
 
 Run `codex mcp list` and confirm `agent-bridge` is connected.
 

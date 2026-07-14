@@ -28,6 +28,8 @@ export class CodexCliAdapter implements AgentAdapter {
   public async run(request: AgentRunRequest): Promise<AgentRunResult> {
     const sandbox = request.task.mode === "read_only" ? "read-only" : "workspace-write";
     const args = [
+      "--ask-for-approval",
+      "never",
       "exec",
       "--ephemeral",
       "--json",
@@ -36,16 +38,16 @@ export class CodexCliAdapter implements AgentAdapter {
       "--skip-git-repo-check"
     ];
     if (this.config.model) args.push("--model", this.config.model);
-    args.push("-");
+    args.push(request.prompt);
 
     const completed = await runCommand({
       command: this.config.command,
       args,
       cwd: request.workspacePath,
-      input: request.prompt,
       signal: request.signal,
       timeoutMs: this.config.timeoutMs,
-      env: workerEnvironment("codex")
+      env: workerEnvironment("codex"),
+      completionMarker: '"type":"turn.completed"'
     });
     if (completed.exitCode !== 0) {
       throw new Error(`Codex exited with ${completed.exitCode}: ${completed.stderr.trim()}`);

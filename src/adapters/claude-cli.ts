@@ -27,7 +27,6 @@ export class ClaudeCliAdapter implements AgentAdapter {
     const permissionMode = request.task.mode === "read_only" ? "plan" : "acceptEdits";
     const args = [
       "-p",
-      request.prompt,
       "--output-format",
       "json",
       "--no-session-persistence",
@@ -42,6 +41,7 @@ export class ClaudeCliAdapter implements AgentAdapter {
       command: this.config.command,
       args,
       cwd: request.workspacePath,
+      input: request.prompt,
       signal: request.signal,
       timeoutMs: this.config.timeoutMs,
       env: workerEnvironment("claude")

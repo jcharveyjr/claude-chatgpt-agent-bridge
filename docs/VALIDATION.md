@@ -45,6 +45,9 @@ The repository test suite currently proves:
 8. TypeScript strict type checking and production compilation
 9. The compiled release server starts and returns the expected loopback health response
 10. A full mocked installation creates config and MCP registrations on the first run, then preserves both on a repeated run
+11. A real Windows installation passed dependency installation, type checking, all 11 tests, production build, release health smoke testing, both MCP registrations, and the final doctor
+12. Real authenticated handoffs completed in both directions with read-only sandboxes and no file changes
+13. A Codex worker that emits `turn.completed` but retains a Windows process handle is closed and recorded successfully
 
 Commands used:
 
@@ -55,8 +58,10 @@ npm run build
 npm run smoke:http
 ```
 
-## Not Yet Proven in This Build Environment
+## Live Windows Acceptance
 
-The build environment did not contain authenticated `claude` or `codex` executables, so live paid-model task execution was not run here. The adapters are implemented against the current official CLI interfaces and the included `npm run doctor` command checks both executables on the installation host. The complete bootstrap path was exercised with isolated mock executables, including first-time registration and idempotent re-runs; authenticated peer execution remains the installation-host acceptance test.
+The original build environment did not contain authenticated `claude` or `codex` executables. The subsequent Windows installation verified both authenticated CLIs and exposed Windows `.cmd` path quoting, stdin forwarding, sandbox shell resolution, and worker-lifecycle issues. Versions 0.1.2 through 0.1.7 correct them by selecting the package's native `codex.exe`, using a positional prompt with an unambiguous stdin EOF, making approval behavior noninteractive, and accepting Codex's terminal JSON event without waiting forever for a lingering process handle.
+
+Codex-to-Claude task `98d8c7ba-8cc2-40f4-9f23-6b5f268906f5` completed successfully. Claude-to-Codex task `ef588e96-5290-461c-bb01-bcbd64624685` also completed successfully and returned the three expected configuration values in 13 seconds. Both were authenticated, read-only, real-model handoffs and changed no files. See [Windows Installation Log](WINDOWS-INSTALL-LOG.md).
 
 ChatGPT Work and Claude Cowork require a real HTTPS deployment plus connector authorization. The server implements bearer authentication and OAuth JWT verification, but completing those account-specific UI steps requires the user's OAuth tenant, public hostname, and enabled workspace features.

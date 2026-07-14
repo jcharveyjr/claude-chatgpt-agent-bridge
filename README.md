@@ -16,6 +16,7 @@ The linked Cognito Forms video demonstrates a useful shared-tool pattern: both A
 - OAuth/JWT protected-resource support for hosted connectors
 - Shared Claude/Codex delegation skill and plugin scaffolds
 - Automated protocol and queue tests
+- Real authenticated Codex-to-Claude and Claude-to-Codex Windows handoffs completed
 
 See [Validation and Compatibility](docs/VALIDATION.md) for what is proven, what depends on account access, and the product-by-product support matrix. Follow [Setup Tutorial](docs/TUTORIAL.md) to install it.
 
@@ -47,6 +48,8 @@ Edit `bridge.config.json` so its named workspaces point to the project folders t
 ```bash
 npm run start:http
 ```
+
+Windows can run the broker detached with `npm run start:windows` and stop it with `npm run stop:windows`. The setup tutorial also shows the optional sign-in startup entry.
 
 Connect both Claude Code and Codex to `http://127.0.0.1:8787/mcp` using the examples in `configs/`. One shared HTTP process is the recommended two-agent setup. Stdio is included for single-client or diagnostic use.
 

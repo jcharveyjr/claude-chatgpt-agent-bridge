@@ -6,7 +6,11 @@ import { resolve } from "node:path";
 const checks = [];
 
 const checkCommand = (name, args = ["--version"]) => {
-  const result = spawnSync(name, args, { encoding: "utf8", shell: false, windowsHide: true });
+  const result = spawnSync(name, args, {
+    encoding: "utf8",
+    shell: process.platform === "win32",
+    windowsHide: true
+  });
   const output = `${result.stdout ?? ""}${result.stderr ?? ""}`.trim().split(/\r?\n/)[0];
   checks.push({ name, ok: result.status === 0, detail: output || "not found or not authenticated" });
 };

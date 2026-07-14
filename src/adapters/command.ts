@@ -28,6 +28,27 @@ export async function findCommand(command: string): Promise<string | undefined> 
       const candidate = join(directory, `${command}${extension}`);
       try {
         await access(candidate, constants.X_OK);
+        if (command.toLowerCase() === "codex" && /\.cmd$/i.test(candidate)) {
+          const nativeCodex = join(
+            directory,
+            "node_modules",
+            "@openai",
+            "codex",
+            "node_modules",
+            "@openai",
+            "codex-win32-x64",
+            "vendor",
+            "x86_64-pc-windows-msvc",
+            "bin",
+            "codex.exe"
+          );
+          try {
+            await access(nativeCodex, constants.X_OK);
+            return nativeCodex;
+          } catch {
+            // Fall back to the npm launcher when the native optional package is unavailable.
+          }
+        }
         return candidate;
       } catch {
         // Continue searching PATH.
@@ -37,7 +58,7 @@ export async function findCommand(command: string): Promise<string | undefined> 
   return undefined;
 }
 
-export function runCommand(options: {
+export async function runCommand(options: {
   command: string;
   args: string[];
   cwd: string;
@@ -46,30 +67,41 @@ export function runCommand(options: {
   timeoutMs: number;
   env: NodeJS.ProcessEnv;
   maxOutputCharacters?: number;
+  completionMarker?: string;
 }): Promise<CommandResult> {
   const maxOutput = options.maxOutputCharacters ?? 2_000_000;
+  const executable = await findCommand(options.command);
+  if (!executable) throw new Error(`Command '${options.command}' was not found in PATH.`);
+  const requiresWindowsShell = process.platform === "win32" && /\.(?:cmd|bat)$/i.test(executable);
+  const spawnCommand = requiresWindowsShell ? `"${executable}"` : executable;
+  const hasInput = options.input !== undefined;
   return new Promise((resolve, reject) => {
-    const child = spawn(options.command, options.args, {
+    const child = spawn(spawnCommand, options.args, {
       cwd: options.cwd,
       env: options.env,
-      shell: false,
-      stdio: ["pipe", "pipe", "pipe"],
+      shell: requiresWindowsShell,
+      stdio: [hasInput ? "pipe" : "ignore", "pipe", "pipe"],
       windowsHide: true
     });
 
     let stdout = "";
     let stderr = "";
     let settled = false;
+    let completedFromOutput = false;
     const timeout = setTimeout(() => child.kill("SIGTERM"), options.timeoutMs);
     const abort = () => child.kill("SIGTERM");
     options.signal.addEventListener("abort", abort, { once: true });
 
-    child.stdout.setEncoding("utf8");
-    child.stderr.setEncoding("utf8");
-    child.stdout.on("data", (chunk: string) => {
+    child.stdout!.setEncoding("utf8");
+    child.stderr!.setEncoding("utf8");
+    child.stdout!.on("data", (chunk: string) => {
       stdout = `${stdout}${chunk}`.slice(-maxOutput);
+      if (!completedFromOutput && options.completionMarker && stdout.includes(options.completionMarker)) {
+        completedFromOutput = true;
+        child.kill("SIGTERM");
+      }
     });
-    child.stderr.on("data", (chunk: string) => {
+    child.stderr!.on("data", (chunk: string) => {
       stderr = `${stderr}${chunk}`.slice(-maxOutput);
     });
     child.on("error", (error) => {
@@ -88,11 +120,10 @@ export function runCommand(options: {
         reject(new Error("Delegated task was cancelled."));
         return;
       }
-      resolve({ stdout, stderr, exitCode: code ?? 1 });
+      resolve({ stdout, stderr, exitCode: completedFromOutput ? 0 : (code ?? 1) });
     });
 
-    if (options.input !== undefined) child.stdin.end(options.input);
-    else child.stdin.end();
+    if (options.input !== undefined) child.stdin?.end(options.input);
   });
 }
 
