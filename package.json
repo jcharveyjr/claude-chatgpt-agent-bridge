@@ -19,7 +19,7 @@
     "doctor": "node scripts/doctor.mjs",
     "smoke:http": "node scripts/smoke-http.mjs",
     "sync:skills": "node scripts/sync-skills.mjs",
-    "test": "node --test --import tsx test/*.test.ts",
+    "test": "node --test --test-timeout=60000 --import tsx test/*.test.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
