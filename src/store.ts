@@ -9,6 +9,11 @@ interface StoreData {
 
 const EMPTY_STORE: StoreData = { schemaVersion: 1, tasks: [] };
 
+export interface RetentionPolicy {
+  maxCompletedTasks: number;
+  maxTaskAgeDays: number;
+}
+
 export class TaskStore {
   private operation = Promise.resolve();
 
@@ -88,6 +93,45 @@ export class TaskStore {
       }
       if (recovered > 0) await this.write(data);
       return recovered;
+    });
+  }
+
+  /**
+   * Prune terminal (completed/failed/cancelled) tasks so the store cannot grow
+   * without bound. Queued and running tasks are always kept. Returns the number
+   * of tasks removed.
+   */
+  public async enforceRetention(policy: RetentionPolicy): Promise<number> {
+    return this.serial(async () => {
+      const data = await this.read();
+      const before = data.tasks.length;
+      const isTerminal = (task: BridgeTask): boolean =>
+        task.status === "completed" || task.status === "failed" || task.status === "cancelled";
+      const terminalTime = (task: BridgeTask): string =>
+        task.completedAt ?? task.updatedAt ?? task.createdAt;
+      let tasks = data.tasks;
+      if (policy.maxTaskAgeDays > 0) {
+        const cutoff = Date.now() - policy.maxTaskAgeDays * 86_400_000;
+        tasks = tasks.filter((task) => {
+          if (!isTerminal(task)) return true;
+          const ts = Date.parse(terminalTime(task));
+          return Number.isFinite(ts) ? ts >= cutoff : true;
+        });
+      }
+      if (policy.maxCompletedTasks > 0) {
+        const terminal = tasks
+          .filter(isTerminal)
+          .sort((a, b) => terminalTime(b).localeCompare(terminalTime(a)));
+        if (terminal.length > policy.maxCompletedTasks) {
+          const keep = new Set(terminal.slice(0, policy.maxCompletedTasks).map((task) => task.id));
+          tasks = tasks.filter((task) => !isTerminal(task) || keep.has(task.id));
+        }
+      }
+      if (tasks.length !== before) {
+        data.tasks = tasks;
+        await this.write(data);
+      }
+      return before - tasks.length;
     });
   }
 

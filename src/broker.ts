@@ -25,6 +25,7 @@ export class AgentBridgeBroker {
   public async initialize(): Promise<void> {
     await this.store.initialize();
     await this.store.recoverInterrupted();
+    await this.store.enforceRetention(this.config.retention);
     this.schedule("claude");
     this.schedule("codex");
   }
@@ -194,6 +195,7 @@ export class AgentBridgeBroker {
       });
     } finally {
       this.abortControllers.delete(started.id);
+      await this.store.enforceRetention(this.config.retention);
     }
   }
 }

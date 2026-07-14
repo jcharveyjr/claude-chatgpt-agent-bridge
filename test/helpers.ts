@@ -14,6 +14,12 @@ export async function testConfig(overrides: Partial<BridgeConfig> = {}): Promise
     defaultWorkspace: "test",
     maxDelegationDepth: 2,
     maxTaskCharacters: 50_000,
+    retention: {
+      maxCompletedTasks: 500,
+      maxTaskAgeDays: 30,
+      maxLogSizeBytes: 5_000_000,
+      maxLogFiles: 5
+    },
     workspaces: { test: workspace },
     agents: {
       claude: {
