@@ -13,6 +13,7 @@
     "dev:http": "tsx src/cli.ts http",
     "start:stdio": "node dist/src/cli.js stdio",
     "start:http": "node dist/src/cli.js http",
+    "status": "node dist/src/cli.js status",
     "start:windows": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/start-agent-bridge.ps1",
     "stop:windows": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/stop-agent-bridge.ps1",
     "setup:local": "node scripts/setup-local.mjs",

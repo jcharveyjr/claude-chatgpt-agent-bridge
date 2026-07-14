@@ -21,10 +21,19 @@ function loadEnvFileIfPresent(): void {
 async function main(): Promise<void> {
   loadEnvFileIfPresent();
   const mode = process.argv[2] ?? "stdio";
-  if (mode !== "stdio" && mode !== "http") {
-    throw new Error("Usage: agent-bridge [stdio|http]");
+  if (mode !== "stdio" && mode !== "http" && mode !== "status") {
+    throw new Error("Usage: agent-bridge [stdio|http|status]");
   }
   const config = await loadConfig();
+
+  if (mode === "status") {
+    const { collectStatus, formatStatus } = await import("./status.js");
+    const report = await collectStatus(config);
+    const asJson = process.argv.includes("--json");
+    process.stdout.write(`${asJson ? JSON.stringify(report, null, 2) : formatStatus(report)}\n`);
+    return;
+  }
+
   const store = new TaskStore(join(config.dataDirectory, "tasks.json"));
   const broker = new AgentBridgeBroker(config, store, buildAdapters(config));
   await broker.initialize();
