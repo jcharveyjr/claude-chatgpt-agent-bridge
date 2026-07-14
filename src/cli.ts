@@ -1,5 +1,6 @@
 #!/usr/bin/env node
-import { join } from "node:path";
+import { existsSync } from "node:fs";
+import { join, resolve } from "node:path";
 import { buildAdapters } from "./adapters/index.js";
 import { AgentBridgeBroker } from "./broker.js";
 import { loadConfig } from "./config.js";
@@ -7,7 +8,18 @@ import { TaskStore } from "./store.js";
 import { startHttpServer } from "./transports/http.js";
 import { startStdioServer } from "./transports/stdio.js";
 
+function loadEnvFileIfPresent(): void {
+  const envPath = resolve(process.env.AGENT_BRIDGE_ENV_FILE ?? ".env");
+  if (typeof process.loadEnvFile !== "function" || !existsSync(envPath)) return;
+  try {
+    process.loadEnvFile(envPath);
+  } catch (error) {
+    process.stderr.write(`Ignoring malformed env file at ${envPath}: ${error instanceof Error ? error.message : String(error)}\n`);
+  }
+}
+
 async function main(): Promise<void> {
+  loadEnvFileIfPresent();
   const mode = process.argv[2] ?? "stdio";
   if (mode !== "stdio" && mode !== "http") {
     throw new Error("Usage: agent-bridge [stdio|http]");
