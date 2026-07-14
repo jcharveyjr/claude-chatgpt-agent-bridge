@@ -9,6 +9,18 @@ export interface CommandResult {
   exitCode: number;
 }
 
+/**
+ * Compose a single, safely quoted command line for the Windows shell path.
+ * Node deprecates (DEP0190) passing an args array together with { shell: true },
+ * so on Windows .cmd/.bat launchers we pre-join the executable and its arguments
+ * and spawn with an empty args array instead. Each token is wrapped in double
+ * quotes with embedded quotes doubled, which cmd.exe parses correctly.
+ */
+export function buildWindowsShellCommand(executable: string, args: string[]): string {
+  const quote = (value: string): string => `"${value.replace(/"/g, '""')}"`;
+  return [quote(executable), ...args.map(quote)].join(" ");
+}
+
 export async function findCommand(command: string): Promise<string | undefined> {
   if (isAbsolute(command)) {
     try {
@@ -73,10 +85,15 @@ export async function runCommand(options: {
   const executable = await findCommand(options.command);
   if (!executable) throw new Error(`Command '${options.command}' was not found in PATH.`);
   const requiresWindowsShell = process.platform === "win32" && /\.(?:cmd|bat)$/i.test(executable);
-  const spawnCommand = requiresWindowsShell ? `"${executable}"` : executable;
+  // Avoid DEP0190: never pass an args array together with shell:true. On the
+  // Windows shell path we compose a single quoted command line instead.
+  const spawnCommand = requiresWindowsShell
+    ? buildWindowsShellCommand(executable, options.args)
+    : executable;
+  const spawnArgs = requiresWindowsShell ? [] : options.args;
   const hasInput = options.input !== undefined;
   return new Promise((resolve, reject) => {
-    const child = spawn(spawnCommand, options.args, {
+    const child = spawn(spawnCommand, spawnArgs, {
       cwd: options.cwd,
       env: options.env,
       shell: requiresWindowsShell,
