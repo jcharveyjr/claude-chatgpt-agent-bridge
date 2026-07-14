@@ -222,7 +222,10 @@ async function main() {
   }
 
   if (!options.skipInstall) {
-    run("npm", ["install"]);
+    // Force devDependencies (typescript, tsx) to install even when the user's
+    // npm config sets omit=dev or NODE_ENV=production; the typecheck, test, and
+    // build steps below depend on them.
+    run("npm", ["install", "--include=dev"]);
   }
   await configureWorkspace(options);
   run("npm", ["run", "sync:skills"]);
