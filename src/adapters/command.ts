@@ -88,7 +88,11 @@ export async function runCommand(options: {
     let stderr = "";
     let settled = false;
     let completedFromOutput = false;
-    const timeout = setTimeout(() => child.kill("SIGTERM"), options.timeoutMs);
+    let timedOut = false;
+    const timeout = setTimeout(() => {
+      timedOut = true;
+      child.kill("SIGTERM");
+    }, options.timeoutMs);
     const abort = () => child.kill("SIGTERM");
     options.signal.addEventListener("abort", abort, { once: true });
 
@@ -118,6 +122,10 @@ export async function runCommand(options: {
       options.signal.removeEventListener("abort", abort);
       if (options.signal.aborted) {
         reject(new Error("Delegated task was cancelled."));
+        return;
+      }
+      if (timedOut && !completedFromOutput) {
+        reject(new Error(`Command '${options.command}' timed out after ${options.timeoutMs} ms.`));
         return;
       }
       resolve({ stdout, stderr, exitCode: completedFromOutput ? 0 : (code ?? 1) });
