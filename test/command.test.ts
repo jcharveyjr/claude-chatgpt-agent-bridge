@@ -36,3 +36,16 @@ test("runCommand rejects with a clear timeout error when no marker appears", asy
     /timed out after 200 ms/
   );
 });
+
+test("buildWindowsShellCommand quotes the executable and each argument", async () => {
+  const { buildWindowsShellCommand } = await import("../src/adapters/command.js");
+  assert.equal(
+    buildWindowsShellCommand("C:\\tools\\claude.cmd", ["-p", "--max-turns", "30"]),
+    '"C:\\tools\\claude.cmd" "-p" "--max-turns" "30"'
+  );
+  // Embedded double quotes are doubled so cmd.exe parses them literally.
+  assert.equal(
+    buildWindowsShellCommand("codex.cmd", ['say "hi"']),
+    '"codex.cmd" "say ""hi"""'
+  );
+});
