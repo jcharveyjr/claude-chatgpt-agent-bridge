@@ -90,3 +90,41 @@ summary, and any defects found. Update the acceptance table in
 The handoff is accepted when the write task completes, the file matches the
 success criteria exactly, all three negative checks behave as specified, and no
 worker process is left running afterward.
+
+## Repeatable harness (Windows)
+
+`scripts/acceptance-harness.ps1` automates everything around the handoff. The
+delegation itself still needs an authenticated worker CLI and is run by the
+operator between `prepare` and `verify`.
+
+```powershell
+# 1. Create a disposable repo + temp loopback config on a non-production port,
+#    build if needed, and start a test broker (default port 39787).
+./scripts/acceptance-harness.ps1 -Step prepare
+
+# 2. From Claude or Codex, run the delegate_task call it prints:
+#      target_agent codex, source_agent claude, workspace accept,
+#      mode workspace_write,
+#      task "Create hello.txt containing the text HELLO_BRIDGE and nothing else."
+#    Poll get_task until completed.
+
+# 3. Verify the exact output file, capture git status/diff, and list leftover
+#    worker processes. Exits non-zero if hello.txt is missing or wrong.
+./scripts/acceptance-harness.ps1 -Step verify
+
+# 4. Stop the test broker and remove all temporary files.
+./scripts/acceptance-harness.ps1 -Step cleanup
+```
+
+Notes:
+
+- The harness never touches the known-good runtime; it uses a separate config,
+  data directory, and loopback port. Override with `-Port` and `-Root`.
+- `prepare` writes its config without a BOM (Node's JSON parser rejects a BOM),
+  seeds the repo with a single commit, and waits for `/health` before returning.
+- `verify` returns exit code 1 until a worker has produced the exact expected
+  file, so it is safe to run in a loop while polling `get_task`.
+- The `prepare -> verify -> cleanup` lifecycle (broker start, health, output
+  check, git capture, teardown) has been exercised directly. The worker
+  delegation step is provider-dependent and, while Codex is quota-blocked, has
+  not been run end to end with a real Codex task ID.
