@@ -30,32 +30,48 @@ export function buildWindowsShellCommand(executable: string, args: string[]): st
  * process-group leader. This kills the whole tree so no worker is left running
  * after a timeout or cancellation.
  */
-export function terminateProcessTree(child: ChildProcess, signal: NodeJS.Signals = "SIGTERM"): void {
+export function terminateProcessTree(child: ChildProcess, signal: NodeJS.Signals = "SIGTERM"): Promise<void> {
   const pid = child.pid;
-  if (pid === undefined) return;
+  if (pid === undefined) return Promise.resolve();
   if (process.platform === "win32") {
-    try {
-      const killer = spawn("taskkill", ["/pid", String(pid), "/t", "/f"], {
-        windowsHide: true,
-        stdio: "ignore"
-      });
-      killer.on("error", () => {
+    // Windows: taskkill /T walks the whole descendant tree (the real worker runs
+    // as a grandchild of the .cmd launcher). Resolve only once taskkill has exited
+    // so callers can sequence escalation deterministically instead of racing it.
+    return new Promise<void>((resolve) => {
+      let settled = false;
+      const finish = () => { if (!settled) { settled = true; resolve(); } };
+      let killer: ChildProcess;
+      try {
+        killer = spawn("taskkill", ["/pid", String(pid), "/t", "/f"], {
+          windowsHide: true,
+          stdio: "ignore"
+        });
+      } catch {
+        // taskkill could not be launched at all; fall back to a direct force-kill.
         try { child.kill("SIGKILL"); } catch { /* already gone */ }
+        finish();
+        return;
+      }
+      killer.once("error", () => {
+        try { child.kill("SIGKILL"); } catch { /* already gone */ }
+        finish();
       });
-      // Never let the reaper hold the parent's event loop open.
-      killer.unref();
-    } catch {
-      try { child.kill("SIGKILL"); } catch { /* already gone */ }
-    }
-    return;
+      killer.once("exit", finish);
+      // Safety valve: never let a stuck taskkill hold cleanup open indefinitely.
+      const guard = setTimeout(finish, 5_000);
+      guard.unref?.();
+    });
   }
   // POSIX: the child was spawned detached, so it leads its own process group;
-  // a negative pid signals the whole group.
-  try {
-    process.kill(-pid, signal);
-  } catch {
-    try { child.kill(signal); } catch { /* already gone */ }
-  }
+  // a negative pid signals the whole group in one call. Resolve synchronously.
+  return new Promise<void>((resolve) => {
+    try {
+      process.kill(-pid, signal);
+    } catch {
+      try { child.kill(signal); } catch { /* already gone */ }
+    }
+    resolve();
+  });
 }
 
 export async function findCommand(command: string): Promise<string | undefined> {
@@ -147,20 +163,23 @@ export async function runCommand(options: {
     let completedFromOutput = false;
     let timedOut = false;
     let forceKillTimer: NodeJS.Timeout | undefined;
+    let killing = false;
     const killTree = () => {
-      // Best-effort: reap the whole descendant tree so no worker is left behind.
-      terminateProcessTree(child, "SIGTERM");
-      // Guaranteed: signal the direct child so the promise always settles even
-      // if the tree reaper (taskkill / process group) is unavailable.
-      try { child.kill("SIGTERM"); } catch { /* already gone */ }
-      // Escalate to a forceful kill if the tree does not exit promptly.
-      if (!forceKillTimer) {
-        forceKillTimer = setTimeout(() => {
-          terminateProcessTree(child, "SIGKILL");
-          try { child.kill("SIGKILL"); } catch { /* already gone */ }
-        }, 3_000);
-        forceKillTimer.unref?.();
-      }
+      // One coordinated shutdown: guard against duplicate taskkills / settlement
+      // when several triggers (timeout, cancel, completion marker) fire together.
+      if (killing) return;
+      killing = true;
+      // Bounded escalation: force-kill the tree if graceful termination stalls.
+      forceKillTimer = setTimeout(() => {
+        void terminateProcessTree(child, "SIGKILL");
+      }, 3_000);
+      forceKillTimer.unref?.();
+      // Graceful: terminate the whole tree. On Windows, taskkill /T already covers
+      // the launcher and its descendants, so we deliberately do NOT also signal the
+      // direct child here - doing so could kill the launcher before taskkill walks
+      // the tree and orphan the real worker (the exact race this fixes). On POSIX the
+      // process-group signal inside terminateProcessTree covers the whole tree.
+      void terminateProcessTree(child, "SIGTERM");
     };
     // Ignore EPIPE if the worker exits before consuming all of stdin.
     child.stdin?.on("error", () => { /* worker closed stdin early */ });
