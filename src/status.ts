@@ -2,7 +2,8 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import type { BridgeConfig } from "./config.js";
 import { buildAdapters } from "./adapters/index.js";
-import type { BridgeTask, TaskStatus } from "./types.js";
+import { inspectTaskStore, type TaskStoreState } from "./store.js";
+import type { TaskStatus } from "./types.js";
 
 export interface StatusReport {
   broker: { endpoint: string; healthy: boolean; detail: string };
@@ -10,6 +11,8 @@ export interface StatusReport {
   pidRunning: boolean | undefined;
   workers: Record<string, { available: boolean; detail: string }>;
   queue: Record<TaskStatus, number>;
+  queueReliable: boolean;
+  taskStore: { state: TaskStoreState; reliable: boolean; detail: string };
   running: Array<{ id: string; targetAgent: string; startedAt?: string }>;
   recentFailures: Array<{ id: string; error: string; completedAt?: string }>;
   dataDirectory: string;
@@ -28,16 +31,6 @@ async function checkHealth(endpoint: string): Promise<{ healthy: boolean; detail
     return { healthy: false, detail: error instanceof Error ? error.message : String(error) };
   } finally {
     clearTimeout(timer);
-  }
-}
-
-async function readTasks(dataDirectory: string): Promise<BridgeTask[]> {
-  try {
-    const raw = await readFile(join(dataDirectory, "tasks.json"), "utf8");
-    const data = JSON.parse(raw) as { tasks?: BridgeTask[] };
-    return Array.isArray(data?.tasks) ? data.tasks : [];
-  } catch {
-    return [];
   }
 }
 
@@ -71,7 +64,8 @@ export async function collectStatus(config: BridgeConfig): Promise<StatusReport>
       return [name, availability] as const;
     })
   );
-  const tasks = await readTasks(config.dataDirectory);
+  const storeInspection = await inspectTaskStore(join(config.dataDirectory, "tasks.json"));
+  const tasks = storeInspection.tasks;
   const queue: Record<TaskStatus, number> = {
     queued: 0, running: 0, completed: 0, failed: 0, cancelled: 0
   };
@@ -101,6 +95,8 @@ export async function collectStatus(config: BridgeConfig): Promise<StatusReport>
     pidRunning: isPidRunning(pid),
     workers: Object.fromEntries(workerEntries),
     queue,
+    queueReliable: storeInspection.reliable,
+    taskStore: { state: storeInspection.state, reliable: storeInspection.reliable, detail: storeInspection.detail },
     running,
     recentFailures,
     dataDirectory: config.dataDirectory,
@@ -117,13 +113,15 @@ export function formatStatus(report: StatusReport): string {
     : `${report.pid} (${report.pidRunning ? "running" : "not running"})`;
   lines.push(`  PID:        ${pidText}`);
   lines.push(`  Data dir:   ${report.dataDirectory}`);
+  lines.push(`  Task store: ${report.taskStore.state}${report.taskStore.reliable ? "" : ` (${report.taskStore.detail})`}`);
   lines.push("  Workers:");
   for (const [name, worker] of Object.entries(report.workers)) {
     lines.push(`    ${name}: ${worker.available ? "available" : "unavailable"} - ${worker.detail}`);
   }
   lines.push(
     `  Queue:      queued=${report.queue.queued} running=${report.queue.running} ` +
-    `completed=${report.queue.completed} failed=${report.queue.failed} cancelled=${report.queue.cancelled}`
+    `completed=${report.queue.completed} failed=${report.queue.failed} cancelled=${report.queue.cancelled}` +
+    `${report.queueReliable ? "" : "  (UNRELIABLE: task store not readable)"}`
   );
   if (report.running.length > 0) {
     lines.push("  Running:");

@@ -164,3 +164,60 @@ export class TaskStore {
     }
   }
 }
+
+export type TaskStoreState =
+  | "healthy"
+  | "missing"
+  | "unreadable"
+  | "corrupt"
+  | "unsupported-schema";
+
+export interface TaskStoreInspection {
+  state: TaskStoreState;
+  reliable: boolean;
+  detail: string;
+  tasks: BridgeTask[];
+}
+
+/**
+ * Read-only inspection of a task-store file that classifies its health instead
+ * of collapsing every failure into an empty list. Reuses the same schema check
+ * as TaskStore.read (schemaVersion === 1 and tasks is an array) so status and
+ * the broker never disagree about what "valid" means.
+ */
+export async function inspectTaskStore(path: string): Promise<TaskStoreInspection> {
+  let raw: string;
+  try {
+    raw = await readFile(path, "utf8");
+  } catch (error) {
+    const code = (error as NodeJS.ErrnoException).code;
+    if (code === "ENOENT") {
+      return { state: "missing", reliable: false, detail: "no task store on disk yet", tasks: [] };
+    }
+    return {
+      state: "unreadable",
+      reliable: false,
+      detail: `cannot read task store (${code ?? "unknown error"})`,
+      tasks: []
+    };
+  }
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return { state: "corrupt", reliable: false, detail: "task store is not valid JSON", tasks: [] };
+  }
+  const candidate = parsed as { schemaVersion?: unknown; tasks?: unknown };
+  if (candidate.schemaVersion !== 1) {
+    return {
+      state: "unsupported-schema",
+      reliable: false,
+      detail: `unsupported task-store schemaVersion: ${String(candidate.schemaVersion)}`,
+      tasks: []
+    };
+  }
+  if (!Array.isArray(candidate.tasks)) {
+    return { state: "corrupt", reliable: false, detail: "task store 'tasks' field is not an array", tasks: [] };
+  }
+  return { state: "healthy", reliable: true, detail: "ok", tasks: candidate.tasks as BridgeTask[] };
+}
