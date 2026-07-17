@@ -13,6 +13,13 @@ export interface AgentConfig {
   model?: string;
 }
 
+export interface RetentionConfig {
+  /** Maximum number of tasks to retain in the store. Active tasks are never removed. */
+  maxTasks: number;
+  /** Finished tasks older than this many days are pruned. */
+  maxAgeDays: number;
+}
+
 export interface BridgeConfig {
   configPath: string;
   projectRoot: string;
@@ -20,6 +27,7 @@ export interface BridgeConfig {
   defaultWorkspace: string;
   maxDelegationDepth: number;
   maxTaskCharacters: number;
+  retention: RetentionConfig;
   workspaces: Record<string, string>;
   agents: Record<AgentName, AgentConfig>;
   http: {
@@ -41,6 +49,7 @@ interface RawBridgeConfig {
   defaultWorkspace?: string;
   maxDelegationDepth?: number;
   maxTaskCharacters?: number;
+  retention?: Partial<RetentionConfig>;
   workspaces?: Record<string, string>;
   agents?: Partial<Record<AgentName, Partial<AgentConfig>>>;
   http?: Partial<BridgeConfig["http"]>;
@@ -64,6 +73,21 @@ const defaultAgents: Record<AgentName, AgentConfig> = {
     timeoutMs: 1_800_000
   }
 };
+
+function resolvePositiveInt(
+  envValue: string | undefined,
+  rawValue: number | undefined,
+  fallback: number,
+  label: string
+): number {
+  const source = envValue ?? (rawValue === undefined ? undefined : String(rawValue));
+  if (source === undefined) return fallback;
+  const parsed = Number(source);
+  if (!Number.isInteger(parsed) || parsed < 0) {
+    throw new Error(`${label} must be a non-negative integer, received: ${source}`);
+  }
+  return parsed;
+}
 
 async function fileExists(path: string): Promise<boolean> {
   try {
@@ -103,6 +127,21 @@ export async function loadConfig(explicitPath?: string): Promise<BridgeConfig> {
     ])
   ) as Record<AgentName, AgentConfig>;
 
+  const retention: RetentionConfig = {
+    maxTasks: resolvePositiveInt(
+      process.env.AGENT_BRIDGE_RETENTION_MAX_TASKS,
+      raw.retention?.maxTasks,
+      1_000,
+      "retention.maxTasks"
+    ),
+    maxAgeDays: resolvePositiveInt(
+      process.env.AGENT_BRIDGE_RETENTION_MAX_AGE_DAYS,
+      raw.retention?.maxAgeDays,
+      90,
+      "retention.maxAgeDays"
+    )
+  };
+
   const host = process.env.AGENT_BRIDGE_HOST ?? raw.http?.host ?? "127.0.0.1";
   const port = Number(process.env.AGENT_BRIDGE_PORT ?? raw.http?.port ?? 8787);
   if (!Number.isInteger(port) || port < 1 || port > 65_535) {
@@ -132,6 +171,7 @@ export async function loadConfig(explicitPath?: string): Promise<BridgeConfig> {
     defaultWorkspace,
     maxDelegationDepth: raw.maxDelegationDepth ?? 2,
     maxTaskCharacters: raw.maxTaskCharacters ?? 50_000,
+    retention,
     workspaces,
     agents,
     http: {

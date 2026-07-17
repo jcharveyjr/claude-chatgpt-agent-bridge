@@ -7,6 +7,19 @@ follow semantic versioning.
 ## [Unreleased]
 
 ### Added
+- Task-store retention/rotation. Finished (completed/failed/cancelled) tasks are
+  pruned by age and total count; queued and running tasks are never removed.
+  Configurable via `retention.maxTasks` (default 1000) and `retention.maxAgeDays`
+  (default 90), or the `AGENT_BRIDGE_RETENTION_MAX_TASKS` /
+  `AGENT_BRIDGE_RETENTION_MAX_AGE_DAYS` environment variables. Pruning runs at
+  startup and after each completed task. `TaskStore.prune`/`TaskStore.stats`
+  have unit-test coverage.
+- `status` command (`npm run status`, or `node dist/src/cli.js status`) that
+  reports process (PID, Node version, uptime), HTTP config and live health
+  reachability, configured workspaces and limits, per-agent availability, queue
+  counts by status and target agent, and recent failures. Task contents are
+  deliberately excluded from the snapshot; only IDs, agents, timestamps, and a
+  truncated error message are reported.
 - `.env` is auto-loaded at startup when present (Node `process.loadEnvFile`, no
   new dependencies). The path can be overridden with `AGENT_BRIDGE_ENV_FILE`.
   Closes the gap where `.env.example` documented variables that were never read.

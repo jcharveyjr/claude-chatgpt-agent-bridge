@@ -88,3 +88,42 @@ test("broker cancellation aborts a running task", async () => {
   await broker.waitForIdle();
   assert.equal((await broker.get(delegated.id))?.status, "cancelled");
 });
+
+test("broker.status reports agents, queue counts, and recent failures without task text", async () => {
+  const config = await testConfig();
+  const store = new TaskStore(join(config.dataDirectory, "tasks.json"));
+  const broker = new AgentBridgeBroker(config, store, {
+    claude: new MockAdapter("claude"),
+    codex: new MockAdapter("codex", async () => {
+      throw new Error("secret-bearing failure detail");
+    })
+  });
+  await broker.initialize();
+
+  const ok = await broker.delegate({ targetAgent: "claude", sourceAgent: "codex", task: "Summarize" });
+  const bad = await broker.delegate({ targetAgent: "codex", sourceAgent: "claude", task: "Break" });
+  await broker.waitForIdle();
+
+  const status = await broker.status();
+  assert.equal(status.ok, true);
+  assert.equal(status.service, "agent-bridge");
+
+  const agents = status.agents as Record<string, { available: boolean } | undefined>;
+  assert.equal(agents.claude?.available, true);
+  assert.equal(agents.codex?.available, true);
+
+  const queue = status.queue as { total: number; byStatus: Record<string, number> };
+  assert.equal(queue.total, 2);
+  assert.equal(queue.byStatus.completed, 1);
+  assert.equal(queue.byStatus.failed, 1);
+
+  const failures = status.recentFailures as Array<{ id: string; error?: string; targetAgent: string }>;
+  assert.equal(failures.length, 1);
+  assert.equal(failures[0]?.id, bad.id);
+  assert.equal(failures[0]?.targetAgent, "codex");
+  // Snapshot must not leak the task prompt text.
+  const serialized = JSON.stringify(status);
+  assert.equal(serialized.includes("Break"), false);
+  assert.equal(serialized.includes("Summarize"), false);
+  assert.ok(ok.id);
+});
