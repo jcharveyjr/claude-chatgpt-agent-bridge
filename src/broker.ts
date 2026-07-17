@@ -3,6 +3,7 @@ import { access } from "node:fs/promises";
 import { constants } from "node:fs";
 import type { BridgeConfig } from "./config.js";
 import { buildDelegationPrompt } from "./prompt.js";
+import { BRIDGE_VERSION, fingerprintPath, type InstanceMetadata } from "./instance.js";
 import { TaskStore } from "./store.js";
 import type {
   AgentAdapter,
@@ -15,6 +16,8 @@ import type {
 export class AgentBridgeBroker {
   private readonly active = new Map<AgentName, Promise<void>>();
   private readonly abortControllers = new Map<string, AbortController>();
+  public readonly instanceId = randomUUID();
+  public readonly startedAt = new Date().toISOString();
 
   public constructor(
     private readonly config: BridgeConfig,
@@ -53,6 +56,16 @@ export class AgentBridgeBroker {
     };
   }
 
+  public instanceMetadata(): InstanceMetadata {
+    return {
+      instanceId: this.instanceId,
+      pid: process.pid,
+      version: BRIDGE_VERSION,
+      configFingerprint: fingerprintPath(this.config.configPath),
+      dataDirFingerprint: fingerprintPath(this.config.dataDirectory),
+      startedAt: this.startedAt
+    };
+  }
   public async delegate(input: DelegatedTaskInput): Promise<BridgeTask> {
     const normalizedTask = input.task.trim();
     if (!normalizedTask) throw new Error("task must not be empty");

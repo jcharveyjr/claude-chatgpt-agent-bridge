@@ -2,11 +2,19 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import type { BridgeConfig } from "./config.js";
 import { buildAdapters } from "./adapters/index.js";
+import { fingerprintPath, type InstanceMetadata } from "./instance.js";
 import { inspectTaskStore, type TaskStoreState } from "./store.js";
 import type { TaskStatus } from "./types.js";
 
+export type InstanceMatch = "match" | "mismatch" | "unknown";
+
 export interface StatusReport {
   broker: { endpoint: string; healthy: boolean; detail: string };
+  instance: {
+    match: InstanceMatch;
+    local: { configFingerprint: string; dataDirFingerprint: string };
+    brokerReported?: InstanceMetadata;
+  };
   pid: number | undefined;
   pidRunning: boolean | undefined;
   workers: Record<string, { available: boolean; detail: string }>;
@@ -19,13 +27,36 @@ export interface StatusReport {
   retention: BridgeConfig["retention"];
 }
 
-async function checkHealth(endpoint: string): Promise<{ healthy: boolean; detail: string }> {
+interface HealthResult {
+  healthy: boolean;
+  detail: string;
+  instance?: InstanceMetadata;
+}
+
+/**
+ * Compare the fingerprints reported by the reachable broker against the ones
+ * computed from the local config/data directory. "unknown" means we could not
+ * read broker metadata (unreachable, or an older broker without it).
+ */
+export function classifyInstanceMatch(
+  local: { configFingerprint: string; dataDirFingerprint: string },
+  reported: InstanceMetadata | undefined
+): InstanceMatch {
+  if (!reported) return "unknown";
+  const sameConfig = reported.configFingerprint === local.configFingerprint;
+  const sameData = reported.dataDirFingerprint === local.dataDirFingerprint;
+  return sameConfig && sameData ? "match" : "mismatch";
+}
+
+async function checkHealth(endpoint: string): Promise<HealthResult> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 1500);
   try {
     const response = await fetch(`${endpoint}/health`, { signal: controller.signal });
-    const body = (await response.json().catch(() => ({}))) as { ok?: boolean };
-    if (response.ok && body?.ok === true) return { healthy: true, detail: "ok" };
+    const body = (await response.json().catch(() => ({}))) as { ok?: boolean; instance?: InstanceMetadata };
+    if (response.ok && body?.ok === true) {
+      return { healthy: true, detail: "ok", ...(body.instance ? { instance: body.instance } : {}) };
+    }
     return { healthy: false, detail: `HTTP ${response.status}` };
   } catch (error) {
     return { healthy: false, detail: error instanceof Error ? error.message : String(error) };
@@ -57,6 +88,10 @@ function isPidRunning(pid: number | undefined): boolean | undefined {
 export async function collectStatus(config: BridgeConfig): Promise<StatusReport> {
   const endpoint = `http://${config.http.host}:${config.http.port}`;
   const health = await checkHealth(endpoint);
+  const localFingerprints = {
+    configFingerprint: fingerprintPath(config.configPath),
+    dataDirFingerprint: fingerprintPath(config.dataDirectory)
+  };
   const adapters = buildAdapters(config);
   const workerEntries = await Promise.all(
     (Object.keys(adapters) as Array<keyof typeof adapters>).map(async (name) => {
@@ -91,6 +126,11 @@ export async function collectStatus(config: BridgeConfig): Promise<StatusReport>
   const pid = await readPid(config.dataDirectory);
   return {
     broker: { endpoint: `${endpoint}/mcp`, healthy: health.healthy, detail: health.detail },
+    instance: {
+      match: classifyInstanceMatch(localFingerprints, health.instance),
+      local: localFingerprints,
+      ...(health.instance ? { brokerReported: health.instance } : {})
+    },
     pid,
     pidRunning: isPidRunning(pid),
     workers: Object.fromEntries(workerEntries),
@@ -108,6 +148,14 @@ export function formatStatus(report: StatusReport): string {
   const lines: string[] = ["Agent Bridge status"];
   lines.push(`  Endpoint:   ${report.broker.endpoint}`);
   lines.push(`  Health:     ${report.broker.healthy ? "healthy" : `unreachable (${report.broker.detail})`}`);
+  if (report.instance.match === "mismatch") {
+    lines.push("  Instance:   MISMATCH - reachable broker is a different install than this config/data dir");
+  } else if (report.instance.match === "match") {
+    const reported = report.instance.brokerReported;
+    lines.push(`  Instance:   match (broker pid ${reported?.pid ?? "?"}, up since ${reported?.startedAt ?? "?"})`);
+  } else {
+    lines.push("  Instance:   unknown (broker unreachable or no instance metadata)");
+  }
   const pidText = report.pid === undefined
     ? "unknown"
     : `${report.pid} (${report.pidRunning ? "running" : "not running"})`;
