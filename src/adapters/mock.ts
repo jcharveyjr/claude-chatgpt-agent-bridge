@@ -1,4 +1,4 @@
-import type { AgentAdapter, AgentName, AgentRunRequest, AgentRunResult } from "../types.js";
+import type { AgentAdapter, AgentName, AgentRunRequest, AgentRunResult, WorkerAvailability } from "../types.js";
 
 export class MockAdapter implements AgentAdapter {
   public readonly kind = "mock";
@@ -10,8 +10,14 @@ export class MockAdapter implements AgentAdapter {
     })
   ) {}
 
-  public async isAvailable(): Promise<{ available: boolean; detail: string }> {
-    return { available: true, detail: "in-process test adapter" };
+  public async isAvailable(): Promise<WorkerAvailability> {
+    return {
+      installed: true,
+      commandFound: true,
+      readiness: "unknown",
+      providerCheck: "not performed",
+      detail: "in-process test adapter"
+    };
   }
 
   public run(request: AgentRunRequest): Promise<AgentRunResult> {

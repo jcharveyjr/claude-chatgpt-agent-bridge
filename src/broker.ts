@@ -81,8 +81,8 @@ export class AgentBridgeBroker {
       throw new Error("sourceAgent and targetAgent must differ for cross-vendor delegation");
     }
     const availability = await this.adapters[input.targetAgent].isAvailable();
-    if (!availability.available) {
-      throw new Error(`${input.targetAgent} is unavailable: ${availability.detail}`);
+    if (!availability.installed) {
+      throw new Error(`${input.targetAgent} worker command not found: ${availability.detail}`);
     }
 
     const workspace = input.workspace ?? this.config.defaultWorkspace;

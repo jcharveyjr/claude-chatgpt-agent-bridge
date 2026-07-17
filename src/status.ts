@@ -4,7 +4,7 @@ import type { BridgeConfig } from "./config.js";
 import { buildAdapters } from "./adapters/index.js";
 import { fingerprintPath, type InstanceMetadata } from "./instance.js";
 import { inspectTaskStore, type TaskStoreState } from "./store.js";
-import type { TaskStatus } from "./types.js";
+import type { TaskStatus, WorkerAvailability } from "./types.js";
 
 export type InstanceMatch = "match" | "mismatch" | "unknown";
 
@@ -17,7 +17,7 @@ export interface StatusReport {
   };
   pid: number | undefined;
   pidRunning: boolean | undefined;
-  workers: Record<string, { available: boolean; detail: string }>;
+  workers: Record<string, WorkerAvailability>;
   queue: Record<TaskStatus, number>;
   queueReliable: boolean;
   taskStore: { state: TaskStoreState; reliable: boolean; detail: string };
@@ -164,7 +164,7 @@ export function formatStatus(report: StatusReport): string {
   lines.push(`  Task store: ${report.taskStore.state}${report.taskStore.reliable ? "" : ` (${report.taskStore.detail})`}`);
   lines.push("  Workers:");
   for (const [name, worker] of Object.entries(report.workers)) {
-    lines.push(`    ${name}: ${worker.available ? "available" : "unavailable"} - ${worker.detail}`);
+    lines.push(`    ${name}: ${worker.installed ? "installed" : "not installed"} (readiness: ${worker.readiness}; providerCheck: ${worker.providerCheck})${worker.executablePath ? ` @ ${worker.executablePath}` : ""} - ${worker.detail}`);
   }
   lines.push(
     `  Queue:      queued=${report.queue.queued} running=${report.queue.running} ` +

@@ -1,5 +1,5 @@
 import type { AgentConfig } from "../config.js";
-import type { AgentAdapter, AgentRunRequest, AgentRunResult } from "../types.js";
+import type { AgentAdapter, AgentRunRequest, AgentRunResult, WorkerAvailability } from "../types.js";
 import { findCommand, runCommand, workerEnvironment } from "./command.js";
 
 interface CodexEvent {
@@ -17,12 +17,34 @@ export class CodexCliAdapter implements AgentAdapter {
 
   public constructor(private readonly config: AgentConfig) {}
 
-  public async isAvailable(): Promise<{ available: boolean; detail: string }> {
-    if (!this.config.enabled) return { available: false, detail: "disabled in configuration" };
+  public async isAvailable(): Promise<WorkerAvailability> {
+    if (!this.config.enabled) {
+      return {
+        installed: false,
+        commandFound: false,
+        readiness: "unknown",
+        providerCheck: "not performed",
+        detail: "disabled in configuration"
+      };
+    }
     const executable = await findCommand(this.config.command);
-    return executable
-      ? { available: true, detail: executable }
-      : { available: false, detail: `command '${this.config.command}' was not found in PATH` };
+    if (!executable) {
+      return {
+        installed: false,
+        commandFound: false,
+        readiness: "unknown",
+        providerCheck: "not performed",
+        detail: `command '${this.config.command}' was not found in PATH`
+      };
+    }
+    return {
+      installed: true,
+      commandFound: true,
+      executablePath: executable,
+      readiness: "unknown",
+      providerCheck: "not performed",
+      detail: `found at ${executable}; readiness not verified (no auth/quota check performed)`
+    };
   }
 
   public async run(request: AgentRunRequest): Promise<AgentRunResult> {

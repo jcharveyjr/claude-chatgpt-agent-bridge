@@ -61,9 +61,17 @@ export interface AgentRunResult {
   metadata?: Record<string, string | number | boolean>;
 }
 
+export interface WorkerAvailability {
+  installed: boolean;
+  commandFound: boolean;
+  executablePath?: string;
+  readiness: "unknown";
+  providerCheck: "not performed";
+  detail: string;
+}
 export interface AgentAdapter {
   readonly name: AgentName;
   readonly kind: string;
-  isAvailable(): Promise<{ available: boolean; detail: string }>;
+  isAvailable(): Promise<WorkerAvailability>;
   run(request: AgentRunRequest): Promise<AgentRunResult>;
 }

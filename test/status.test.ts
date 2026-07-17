@@ -43,7 +43,8 @@ test("collectStatus reports queue counts, workers, retention, and health", async
   // Nothing is listening on the test port, so health is unreachable.
   assert.equal(report.broker.healthy, false);
   // Mock adapters report available.
-  assert.equal(report.workers.claude?.available, true);
+  assert.equal(report.workers.claude?.installed, true);
+  assert.equal(report.workers.claude?.readiness, "unknown");
   assert.equal(report.retention.maxCompletedTasks, 500);
   assert.match(formatStatus(report), /Agent Bridge status/);
 });
