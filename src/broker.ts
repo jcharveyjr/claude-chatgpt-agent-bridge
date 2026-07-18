@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { access } from "node:fs/promises";
 import { constants } from "node:fs";
 import type { BridgeConfig } from "./config.js";
+import { isLoopbackHost } from "./config.js";
 import { buildDelegationPrompt } from "./prompt.js";
 import { TaskStore } from "./store.js";
 import type {
@@ -25,6 +26,7 @@ export class AgentBridgeBroker {
   public async initialize(): Promise<void> {
     await this.store.initialize();
     await this.store.recoverInterrupted();
+    await this.store.prune(this.config.retention);
     this.schedule("claude");
     this.schedule("codex");
   }
@@ -50,6 +52,89 @@ export class AgentBridgeBroker {
       supportedModes: ["read_only", "workspace_write"],
       execution: "asynchronous; call get_task to retrieve the result"
     };
+  }
+
+  /**
+   * Operational snapshot for the `status` command: process and HTTP health,
+   * agent availability, queue counts, and recent failures. Task contents are
+   * deliberately excluded; only identifiers, agents, timestamps, and a
+   * truncated error message are reported.
+   */
+  public async status(
+    options: { probeHealth?: boolean; recentFailureLimit?: number } = {}
+  ): Promise<Record<string, unknown>> {
+    const agentEntries = await Promise.all(
+      (Object.keys(this.adapters) as AgentName[]).map(async (name) => {
+        const availability = await this.adapters[name].isAvailable();
+        return [name, {
+          adapter: this.adapters[name].kind,
+          enabled: this.config.agents[name].enabled,
+          ...availability
+        }] as const;
+      })
+    );
+
+    const stats = await this.store.stats();
+    const failureLimit = Math.max(1, Math.min(options.recentFailureLimit ?? 10, 50));
+    const recentFailures = (await this.store.list({ limit: 200 }))
+      .filter((task) => task.status === "failed" || task.status === "cancelled")
+      .sort((a, b) => (b.completedAt ?? b.updatedAt).localeCompare(a.completedAt ?? a.updatedAt))
+      .slice(0, failureLimit)
+      .map((task) => ({
+        id: task.id,
+        targetAgent: task.targetAgent,
+        sourceAgent: task.sourceAgent,
+        status: task.status,
+        ...(task.completedAt ? { completedAt: task.completedAt } : {}),
+        ...(task.error ? { error: truncate(task.error, 300) } : {})
+      }));
+
+    const reachable = options.probeHealth ? await this.probeHealth() : null;
+
+    return {
+      ok: true,
+      service: "agent-bridge",
+      protocolVersion: "0.1.0",
+      process: {
+        pid: process.pid,
+        nodeVersion: process.version,
+        uptimeSeconds: Math.round(process.uptime())
+      },
+      http: {
+        host: this.config.http.host,
+        port: this.config.http.port,
+        loopbackOnly: isLoopbackHost(this.config.http.host),
+        ...(this.config.http.publicUrl ? { publicUrl: this.config.http.publicUrl } : {}),
+        reachable
+      },
+      workspaces: Object.keys(this.config.workspaces),
+      defaultWorkspace: this.config.defaultWorkspace,
+      limits: {
+        maxDelegationDepth: this.config.maxDelegationDepth,
+        maxTaskCharacters: this.config.maxTaskCharacters,
+        retention: this.config.retention
+      },
+      agents: Object.fromEntries(agentEntries),
+      queue: stats,
+      recentFailures
+    };
+  }
+
+  private async probeHealth(): Promise<boolean> {
+    const host = isLoopbackHost(this.config.http.host) ? "127.0.0.1" : this.config.http.host;
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 1_500);
+    try {
+      const response = await fetch(
+        `http://${host}:${this.config.http.port}/health`,
+        { signal: controller.signal }
+      );
+      return response.ok;
+    } catch {
+      return false;
+    } finally {
+      clearTimeout(timer);
+    }
   }
 
   public async delegate(input: DelegatedTaskInput): Promise<BridgeTask> {
@@ -153,6 +238,9 @@ export class AgentBridgeBroker {
         .sort((a, b) => a.createdAt.localeCompare(b.createdAt))[0];
       if (!queued) return;
       await this.execute(queued);
+      // Keep the store bounded during long-running operation without holding
+      // the scheduler's active slot open on the empty-queue exit path.
+      await this.store.prune(this.config.retention);
     }
   }
 
@@ -196,4 +284,8 @@ export class AgentBridgeBroker {
       this.abortControllers.delete(started.id);
     }
   }
+}
+
+function truncate(value: string, max: number): string {
+  return value.length > max ? `${value.slice(0, max - 1)}…` : value;
 }
