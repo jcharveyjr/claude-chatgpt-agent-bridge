@@ -10,6 +10,24 @@ $pidFile = Join-Path $dataDirectory "bridge.pid"
 $stdoutLog = Join-Path $dataDirectory "bridge.stdout.log"
 $stderrLog = Join-Path $dataDirectory "bridge.stderr.log"
 
+# Keep a bounded number of prior-session logs (retention.maxLogFiles, default 5).
+$maxLogFiles = 5
+try {
+  $cfg = Get-Content (Join-Path $root "bridge.config.json") -Raw -ErrorAction Stop | ConvertFrom-Json
+  if ($cfg.retention.maxLogFiles) { $maxLogFiles = [int]$cfg.retention.maxLogFiles }
+} catch { }
+
+function Invoke-LogRotation($path, $maxFiles) {
+  if (-not (Test-Path $path)) { return }
+  $oldest = "$path.$maxFiles"
+  if (Test-Path $oldest) { Remove-Item -LiteralPath $oldest -Force }
+  for ($i = $maxFiles - 1; $i -ge 1; $i--) {
+    $src = "$path.$i"
+    if (Test-Path $src) { Move-Item -LiteralPath $src -Destination "$path.$($i + 1)" -Force }
+  }
+  Move-Item -LiteralPath $path -Destination "$path.1" -Force
+}
+
 try {
   $health = Invoke-RestMethod -Uri $healthUrl -TimeoutSec 2
   if ($health.ok) {
@@ -26,6 +44,9 @@ if (-not (Test-Path (Join-Path $root "dist\src\cli.js"))) {
 }
 
 New-Item -ItemType Directory -Path $dataDirectory -Force | Out-Null
+# Archive the previous session's logs before they are overwritten.
+Invoke-LogRotation $stdoutLog $maxLogFiles
+Invoke-LogRotation $stderrLog $maxLogFiles
 $node = (Get-Command node -ErrorAction Stop).Source
 
 if ($Foreground) {

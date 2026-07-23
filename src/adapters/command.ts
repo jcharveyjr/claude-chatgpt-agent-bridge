@@ -1,4 +1,4 @@
-import { spawn } from "node:child_process";
+import { spawn, type ChildProcess } from "node:child_process";
 import { access } from "node:fs/promises";
 import { constants } from "node:fs";
 import { delimiter, isAbsolute, join } from "node:path";
@@ -19,6 +19,59 @@ export interface CommandResult {
 export function buildWindowsShellCommand(executable: string, args: string[]): string {
   const quote = (value: string): string => `"${value.replace(/"/g, '""')}"`;
   return [quote(executable), ...args.map(quote)].join(" ");
+}
+
+/**
+ * Terminate a worker and its entire descendant tree.
+ *
+ * `child.kill()` on Windows sends the signal only to the direct child, which is
+ * usually the cmd.exe/.cmd launcher wrapper — the real worker runs as a
+ * grandchild and would survive. On POSIX the same is true unless the child is a
+ * process-group leader. This kills the whole tree so no worker is left running
+ * after a timeout or cancellation.
+ */
+export function terminateProcessTree(child: ChildProcess, signal: NodeJS.Signals = "SIGTERM"): Promise<void> {
+  const pid = child.pid;
+  if (pid === undefined) return Promise.resolve();
+  if (process.platform === "win32") {
+    // Windows: taskkill /T walks the whole descendant tree (the real worker runs
+    // as a grandchild of the .cmd launcher). Resolve only once taskkill has exited
+    // so callers can sequence escalation deterministically instead of racing it.
+    return new Promise<void>((resolve) => {
+      let settled = false;
+      const finish = () => { if (!settled) { settled = true; resolve(); } };
+      let killer: ChildProcess;
+      try {
+        killer = spawn("taskkill", ["/pid", String(pid), "/t", "/f"], {
+          windowsHide: true,
+          stdio: "ignore"
+        });
+      } catch {
+        // taskkill could not be launched at all; fall back to a direct force-kill.
+        try { child.kill("SIGKILL"); } catch { /* already gone */ }
+        finish();
+        return;
+      }
+      killer.once("error", () => {
+        try { child.kill("SIGKILL"); } catch { /* already gone */ }
+        finish();
+      });
+      killer.once("exit", finish);
+      // Safety valve: never let a stuck taskkill hold cleanup open indefinitely.
+      const guard = setTimeout(finish, 5_000);
+      guard.unref?.();
+    });
+  }
+  // POSIX: the child was spawned detached, so it leads its own process group;
+  // a negative pid signals the whole group in one call. Resolve synchronously.
+  return new Promise<void>((resolve) => {
+    try {
+      process.kill(-pid, signal);
+    } catch {
+      try { child.kill(signal); } catch { /* already gone */ }
+    }
+    resolve();
+  });
 }
 
 export async function findCommand(command: string): Promise<string | undefined> {
@@ -97,6 +150,9 @@ export async function runCommand(options: {
       cwd: options.cwd,
       env: options.env,
       shell: requiresWindowsShell,
+      // POSIX: give the worker its own process group so the whole tree can be
+      // signalled. Windows terminates the tree with taskkill instead.
+      detached: process.platform !== "win32",
       stdio: [hasInput ? "pipe" : "ignore", "pipe", "pipe"],
       windowsHide: true
     });
@@ -106,11 +162,32 @@ export async function runCommand(options: {
     let settled = false;
     let completedFromOutput = false;
     let timedOut = false;
+    let forceKillTimer: NodeJS.Timeout | undefined;
+    let killing = false;
+    const killTree = () => {
+      // One coordinated shutdown: guard against duplicate taskkills / settlement
+      // when several triggers (timeout, cancel, completion marker) fire together.
+      if (killing) return;
+      killing = true;
+      // Bounded escalation: force-kill the tree if graceful termination stalls.
+      forceKillTimer = setTimeout(() => {
+        void terminateProcessTree(child, "SIGKILL");
+      }, 3_000);
+      forceKillTimer.unref?.();
+      // Graceful: terminate the whole tree. On Windows, taskkill /T already covers
+      // the launcher and its descendants, so we deliberately do NOT also signal the
+      // direct child here - doing so could kill the launcher before taskkill walks
+      // the tree and orphan the real worker (the exact race this fixes). On POSIX the
+      // process-group signal inside terminateProcessTree covers the whole tree.
+      void terminateProcessTree(child, "SIGTERM");
+    };
+    // Ignore EPIPE if the worker exits before consuming all of stdin.
+    child.stdin?.on("error", () => { /* worker closed stdin early */ });
     const timeout = setTimeout(() => {
       timedOut = true;
-      child.kill("SIGTERM");
+      killTree();
     }, options.timeoutMs);
-    const abort = () => child.kill("SIGTERM");
+    const abort = () => killTree();
     options.signal.addEventListener("abort", abort, { once: true });
 
     child.stdout!.setEncoding("utf8");
@@ -119,24 +196,30 @@ export async function runCommand(options: {
       stdout = `${stdout}${chunk}`.slice(-maxOutput);
       if (!completedFromOutput && options.completionMarker && stdout.includes(options.completionMarker)) {
         completedFromOutput = true;
-        child.kill("SIGTERM");
+        killTree();
       }
     });
     child.stderr!.on("data", (chunk: string) => {
       stderr = `${stderr}${chunk}`.slice(-maxOutput);
     });
+    const cleanup = () => {
+      clearTimeout(timeout);
+      if (forceKillTimer) clearTimeout(forceKillTimer);
+      options.signal.removeEventListener("abort", abort);
+      // Destroy stdin so a half-written pipe to an exited worker cannot keep the
+      // event loop (or a test runner) alive.
+      try { child.stdin?.destroy(); } catch { /* already closed */ }
+    };
     child.on("error", (error) => {
       if (settled) return;
       settled = true;
-      clearTimeout(timeout);
-      options.signal.removeEventListener("abort", abort);
+      cleanup();
       reject(error);
     });
     child.on("close", (code) => {
       if (settled) return;
       settled = true;
-      clearTimeout(timeout);
-      options.signal.removeEventListener("abort", abort);
+      cleanup();
       if (options.signal.aborted) {
         reject(new Error("Delegated task was cancelled."));
         return;

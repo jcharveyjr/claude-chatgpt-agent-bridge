@@ -20,6 +20,12 @@ export interface BridgeConfig {
   defaultWorkspace: string;
   maxDelegationDepth: number;
   maxTaskCharacters: number;
+  retention: {
+    maxCompletedTasks: number;
+    maxTaskAgeDays: number;
+    maxLogSizeBytes: number;
+    maxLogFiles: number;
+  };
   workspaces: Record<string, string>;
   agents: Record<AgentName, AgentConfig>;
   http: {
@@ -41,6 +47,7 @@ interface RawBridgeConfig {
   defaultWorkspace?: string;
   maxDelegationDepth?: number;
   maxTaskCharacters?: number;
+  retention?: Partial<BridgeConfig["retention"]>;
   workspaces?: Record<string, string>;
   agents?: Partial<Record<AgentName, Partial<AgentConfig>>>;
   http?: Partial<BridgeConfig["http"]>;
@@ -132,6 +139,12 @@ export async function loadConfig(explicitPath?: string): Promise<BridgeConfig> {
     defaultWorkspace,
     maxDelegationDepth: raw.maxDelegationDepth ?? 2,
     maxTaskCharacters: raw.maxTaskCharacters ?? 50_000,
+    retention: {
+      maxCompletedTasks: raw.retention?.maxCompletedTasks ?? 500,
+      maxTaskAgeDays: raw.retention?.maxTaskAgeDays ?? 30,
+      maxLogSizeBytes: raw.retention?.maxLogSizeBytes ?? 5_000_000,
+      maxLogFiles: raw.retention?.maxLogFiles ?? 5
+    },
     workspaces,
     agents,
     http: {

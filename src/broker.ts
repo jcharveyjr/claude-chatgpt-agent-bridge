@@ -3,6 +3,7 @@ import { access } from "node:fs/promises";
 import { constants } from "node:fs";
 import type { BridgeConfig } from "./config.js";
 import { buildDelegationPrompt } from "./prompt.js";
+import { BRIDGE_VERSION, fingerprintPath, type InstanceMetadata } from "./instance.js";
 import { TaskStore } from "./store.js";
 import type {
   AgentAdapter,
@@ -15,6 +16,8 @@ import type {
 export class AgentBridgeBroker {
   private readonly active = new Map<AgentName, Promise<void>>();
   private readonly abortControllers = new Map<string, AbortController>();
+  public readonly instanceId = randomUUID();
+  public readonly startedAt = new Date().toISOString();
 
   public constructor(
     private readonly config: BridgeConfig,
@@ -25,6 +28,7 @@ export class AgentBridgeBroker {
   public async initialize(): Promise<void> {
     await this.store.initialize();
     await this.store.recoverInterrupted();
+    await this.store.enforceRetention(this.config.retention);
     this.schedule("claude");
     this.schedule("codex");
   }
@@ -52,6 +56,16 @@ export class AgentBridgeBroker {
     };
   }
 
+  public instanceMetadata(): InstanceMetadata {
+    return {
+      instanceId: this.instanceId,
+      pid: process.pid,
+      version: BRIDGE_VERSION,
+      configFingerprint: fingerprintPath(this.config.configPath),
+      dataDirFingerprint: fingerprintPath(this.config.dataDirectory),
+      startedAt: this.startedAt
+    };
+  }
   public async delegate(input: DelegatedTaskInput): Promise<BridgeTask> {
     const normalizedTask = input.task.trim();
     if (!normalizedTask) throw new Error("task must not be empty");
@@ -67,8 +81,8 @@ export class AgentBridgeBroker {
       throw new Error("sourceAgent and targetAgent must differ for cross-vendor delegation");
     }
     const availability = await this.adapters[input.targetAgent].isAvailable();
-    if (!availability.available) {
-      throw new Error(`${input.targetAgent} is unavailable: ${availability.detail}`);
+    if (!availability.installed) {
+      throw new Error(`${input.targetAgent} worker command not found: ${availability.detail}`);
     }
 
     const workspace = input.workspace ?? this.config.defaultWorkspace;
@@ -194,6 +208,7 @@ export class AgentBridgeBroker {
       });
     } finally {
       this.abortControllers.delete(started.id);
+      await this.store.enforceRetention(this.config.retention);
     }
   }
 }

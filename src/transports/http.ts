@@ -93,7 +93,7 @@ export async function startHttpServer(
     try {
       const url = new URL(request.url ?? "/", `http://${request.headers.host ?? "localhost"}`);
       if (url.pathname === "/health" && request.method === "GET") {
-        json(response, 200, { ok: true, service: "agent-bridge" });
+        json(response, 200, { ok: true, service: "agent-bridge", instance: broker.instanceMetadata() });
         return;
       }
       if (url.pathname === "/.well-known/oauth-protected-resource/mcp" && request.method === "GET") {

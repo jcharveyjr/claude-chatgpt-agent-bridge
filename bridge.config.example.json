@@ -3,6 +3,12 @@
   "defaultWorkspace": "bridge",
   "maxDelegationDepth": 2,
   "maxTaskCharacters": 50000,
+  "retention": {
+    "maxCompletedTasks": 500,
+    "maxTaskAgeDays": 30,
+    "maxLogSizeBytes": 5000000,
+    "maxLogFiles": 5
+  },
   "workspaces": {
     "bridge": "."
   },
