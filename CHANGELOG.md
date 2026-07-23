@@ -6,10 +6,13 @@ follow semantic versioning.
 
 ## [Unreleased]
 
+## [0.1.8] - 2026-07-23
+
 ### Added
 - `agent-bridge status` subcommand reporting broker health, PID, endpoint,
-  worker availability, queue counts by status, running tasks, recent failures,
-  data directory, and retention config, with a `--json` flag.
+  detected worker commands and readiness state, queue counts, task-store health,
+  running tasks, recent failures, data directory, and retention config, with a
+  `--json` flag. Instance fingerprints prevent mixed runtime/local reports.
 - Configurable task-store retention (`retention.maxCompletedTasks`,
   `retention.maxTaskAgeDays`) enforced on startup and after every task so the
   store cannot grow without bound. Queued and running tasks are never pruned.
@@ -17,7 +20,8 @@ follow semantic versioning.
 - Code-coverage thresholds via `npm run coverage`
   (line >= 70, branch >= 65, funcs >= 70) and a Node 22 CI coverage job.
 - Repeatable acceptance harness `scripts/acceptance-harness.ps1`
-  (`prepare` / `verify` / `cleanup`).
+  (`prepare` / `verify` / `cleanup`). Its Windows default uses Documents rather
+  than a temp path that may resolve through a sandbox-blocked 8.3 short name.
 - Expanded tests: process-tree cancellation, stdin/EPIPE robustness, large
   output, store corruption, retention (count + age), unknown workspace,
   permission-mode propagation, worker failure, concurrent bursts, and status.
@@ -28,9 +32,9 @@ follow semantic versioning.
 - GitHub Actions CI (`.github/workflows/ci.yml`) running type check, tests,
   build, and the HTTP smoke test on Node 20 and 22 for pushes and pull requests.
 - `buildWindowsShellCommand` helper (exported) with unit-test coverage.
-- Documentation: `CHANGELOG.md`, `RELEASE_NOTES-v0.1.7.md`,
-  `docs/ACCEPTANCE-WORKSPACE-WRITE.md` (write-mode handoff procedure), and
-  `docs/HOSTED-DEPLOYMENT.md` (public HTTPS + OAuth setup).
+- Documentation: `RELEASE_NOTES-v0.1.8.md`, updated validation and Windows
+  acceptance evidence, the write-mode handoff procedure, development workflow,
+  user guide, and hosted-deployment guidance.
 
 ### Changed
 - Worker timeout and cancellation now terminate the entire worker process tree
@@ -43,9 +47,9 @@ follow semantic versioning.
   `Command '<name>' timed out after <N> ms.` error instead of surfacing as a
   generic non-zero exit code, making a slow peer distinguishable from a crash.
 - Windows worker spawn no longer passes an args array together with
-  `shell: true`; the command line is pre-composed and safely quoted. This
-  resolves Node's DEP0190 deprecation. (Validate on a Windows host before
-  release; behavior on non-Windows platforms is unchanged.)
+  `shell: true`; the command line is pre-composed and safely quoted. Live
+  Claude and Codex write-mode acceptance completed without DEP0190, quoting
+  regressions, or leftover CLI workers.
 - `.env.example` documents the new auto-load behavior.
 
 ## [0.1.7] - 2026-07-13

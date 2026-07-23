@@ -1,6 +1,6 @@
 # Validation and Compatibility
 
-Validated on July 13, 2026.
+Validated on July 23, 2026.
 
 ## Bottom Line
 
@@ -48,20 +48,27 @@ The repository test suite currently proves:
 11. A real Windows installation passed dependency installation, type checking, all 11 tests, production build, release health smoke testing, both MCP registrations, and the final doctor
 12. Real authenticated handoffs completed in both directions with read-only sandboxes and no file changes
 13. A Codex worker that emits `turn.completed` but retains a Windows process handle is closed and recorded successfully
+14. Deterministic worker-tree termination on cancellation and timeout, including a spawned grandchild
+15. Task-store corruption detection, completed-task retention, queue bursts, large results, and status instance matching
+16. The current suite contains 49 tests and enforces coverage minimums of 70% lines, 65% branches, and 70% functions
 
 Commands used:
 
 ```bash
+npm run doctor
 npm run typecheck
 npm test
 npm run build
 npm run smoke:http
+npm run coverage
 ```
 
 ## Live Windows Acceptance
 
-The original build environment did not contain authenticated `claude` or `codex` executables. The subsequent Windows installation verified both authenticated CLIs and exposed Windows `.cmd` path quoting, stdin forwarding, sandbox shell resolution, and worker-lifecycle issues. Versions 0.1.2 through 0.1.7 correct them by selecting the package's native `codex.exe`, using a positional prompt with an unambiguous stdin EOF, making approval behavior noninteractive, and accepting Codex's terminal JSON event without waiting forever for a lingering process handle.
+The original build environment did not contain authenticated `claude` or `codex` executables. The subsequent Windows installation verified both authenticated CLIs and exposed Windows `.cmd` path quoting, stdin forwarding, sandbox shell resolution, and worker-lifecycle issues. Versions 0.1.2 through 0.1.8 correct them by selecting the package's native `codex.exe`, using a positional prompt with an unambiguous stdin EOF, making approval behavior noninteractive, accepting Codex's terminal JSON event without waiting forever for a lingering process handle, and deterministically terminating worker process trees.
 
-Codex-to-Claude task `98d8c7ba-8cc2-40f4-9f23-6b5f268906f5` completed successfully. Claude-to-Codex task `ef588e96-5290-461c-bb01-bcbd64624685` also completed successfully and returned the three expected configuration values in 13 seconds. Both were authenticated, read-only, real-model handoffs and changed no files. See [Windows Installation Log](WINDOWS-INSTALL-LOG.md).
+Codex-to-Claude task `98d8c7ba-8cc2-40f4-9f23-6b5f268906f5` completed successfully. Claude-to-Codex task `ef588e96-5290-461c-bb01-bcbd64624685` also completed successfully and returned the three expected configuration values in 13 seconds. Both were authenticated, read-only, real-model handoffs and changed no files.
+
+For v0.1.8, real ChatGPT-to-Claude task `6b5789cd-2f80-4231-88a6-958dbefbebdc` and ChatGPT-to-Codex task `7141e2b3-79cf-46da-a314-a71a51cff293` each created the exact expected file in an isolated `workspace_write` repository. Read-only task `bc169c2f-27ba-45f1-87f6-ccf27d48ed20` was denied write access and left the repository clean. Unknown workspaces and same-agent delegation were rejected; no CLI worker remained and no DEP0190 warning appeared. See [Windows Installation Log](WINDOWS-INSTALL-LOG.md).
 
 ChatGPT Work and Claude Cowork require a real HTTPS deployment plus connector authorization. The server implements bearer authentication and OAuth JWT verification, but completing those account-specific UI steps requires the user's OAuth tenant, public hostname, and enabled workspace features.

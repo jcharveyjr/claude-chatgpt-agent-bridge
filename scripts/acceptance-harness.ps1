@@ -23,7 +23,7 @@
 param(
   [Parameter(Mandatory = $true)][ValidateSet('prepare', 'verify', 'cleanup')]$Step,
   [int]$Port = 39787,
-  [string]$Root = (Join-Path $env:TEMP 'agent-bridge-acceptance'),
+  [string]$Root = (Join-Path ([Environment]::GetFolderPath('MyDocuments')) 'AgentBridge-acceptance'),
   [string]$Expected = 'HELLO_BRIDGE'
 )
 

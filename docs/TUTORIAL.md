@@ -2,7 +2,7 @@
 
 This tutorial starts with the fully local configuration and then extends it to ChatGPT Work and Claude Cowork.
 
-For the recorded Windows installation, real two-direction handoffs, and compatibility corrections through version 0.1.7, see [Windows Installation Log](WINDOWS-INSTALL-LOG.md).
+For the recorded Windows installation, real two-direction handoffs, and compatibility corrections through version 0.1.8, see [Windows Installation Log](WINDOWS-INSTALL-LOG.md).
 
 ## Phase 1: Install the Local Bridge
 

@@ -69,3 +69,24 @@ worker process lingers after a real Codex handoff. The `taskkill` tree reaper di
 not emit events inside the Claude Desktop sandbox, so a live check on a normal
 Windows session is recommended; the direct `child.kill()` guarantees the bridge
 promise settles regardless.
+
+## v0.1.8 release acceptance — July 23, 2026
+
+The hardened development build was tested on an isolated loopback broker at
+`127.0.0.1:39787` with a disposable Git repository under Documents. The first
+attempt exposed that the harness's temp-directory default resolved through the
+sandbox-blocked `JCHARV~1` short path. The default was changed to Documents and
+the complete acceptance sequence was rerun.
+
+- ChatGPT to Claude `workspace_write` task
+  `6b5789cd-2f80-4231-88a6-958dbefbebdc` created a 12-byte `hello.txt`
+  containing exactly `HELLO_BRIDGE`; no other file changed.
+- ChatGPT to Codex `workspace_write` task
+  `7141e2b3-79cf-46da-a314-a71a51cff293` produced the same exact result.
+- Codex read-only task `bc169c2f-27ba-45f1-87f6-ccf27d48ed20` was denied write
+  access; `hello.txt` was absent and the disposable repository stayed clean.
+- Live MCP calls rejected an unknown workspace and a same-source/target task.
+- No Claude Code or Codex CLI worker remained after completion.
+- Test-broker stderr contained no DEP0190 or other deprecation warning.
+- Doctor, typecheck, 49/49 tests, build, HTTP smoke, and coverage passed. Coverage
+  measured 77.91% lines, 73.89% branches, and 81.71% functions.
