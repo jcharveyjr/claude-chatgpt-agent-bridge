@@ -1,16 +1,16 @@
 # Claude + ChatGPT Agent Bridge — Project Status
 
 **Last updated:** July 23, 2026 (America/Chicago)
-**Current version:** 0.1.9 security patch
-**Overall status:** v0.1.8 was published after full live acceptance. Its installation audit found a high-severity transitive dependency issue, fixed in v0.1.9. The active broker is intentionally stopped while the patch is validated, published, and promoted.
+**Current version:** 0.1.10 runtime metadata patch
+**Overall status:** v0.1.9 fixed the high-severity transitive dependency issue. Final live verification then caught stale hardcoded version metadata, fixed and regression-tested in v0.1.10. The active broker is intentionally stopped while this final patch is validated, published, and promoted.
 
 ## Executive Summary
 
 Agent Bridge is a vendor-neutral MCP task broker that allows Claude Code and Codex/ChatGPT agents to delegate bounded tasks to one another through a shared asynchronous queue.
 
-The core local objective has been achieved. Before the controlled patch window, the broker was running on this Windows computer, both CLIs were connected to the same MCP endpoint, all automated checks passed, and real Claude-to-Codex and Codex-to-Claude tasks completed successfully. It is intentionally stopped only while v0.1.9 is published and promoted.
+The core local objective has been achieved. Before the controlled patch window, the broker was running on this Windows computer, both CLIs were connected to the same MCP endpoint, all automated checks passed, and real Claude-to-Codex and Codex-to-Claude tasks completed successfully. It is intentionally stopped only while v0.1.10 is published and promoted.
 
-The clean development clone, CI workflow, operational hardening, retention, status reporting, expanded automated testing, and real write-enabled acceptance are complete. v0.1.8 is published; v0.1.9 updates `fast-uri` to remove the high-severity audit finding. Two moderate transitive Hono advisories remain documented because Agent Bridge does not use the affected static-file handler and npm's proposed remediation is a breaking MCP SDK downgrade.
+The clean development clone, CI workflow, operational hardening, retention, status reporting, expanded automated testing, and real write-enabled acceptance are complete. v0.1.9 updates `fast-uri` to remove the high-severity audit finding; v0.1.10 makes health, capability, and MCP version metadata match the package release. Two moderate transitive Hono advisories remain documented because Agent Bridge does not use the affected static-file handler and npm's proposed remediation is a breaking MCP SDK downgrade.
 
 ## Decisions Locked In — July 17, 2026
 
@@ -25,10 +25,10 @@ JC has made the four pending product and access decisions. These are no longer o
 
 | Item | Location | Status |
 | --- | --- | --- |
-| Active Windows installation | `C:\Users\JC Harvey\Documents\AgentBridge` | v0.1.8 staged; broker intentionally stopped pending v0.1.9 promotion |
+| Active Windows installation | `C:\Users\JC Harvey\Documents\AgentBridge` | v0.1.9 installed; broker intentionally stopped pending v0.1.10 promotion |
 | Public GitHub repository | `jcharveyjr/claude-chatgpt-agent-bridge` | Authoritative source repository |
-| Local MCP endpoint | `http://127.0.0.1:8787/mcp` | Intentionally offline during security-patch promotion |
-| Local health endpoint | `http://127.0.0.1:8787/health` | Intentionally offline during security-patch promotion |
+| Local MCP endpoint | `http://127.0.0.1:8787/mcp` | Intentionally offline during metadata-patch promotion |
+| Local health endpoint | `http://127.0.0.1:8787/health` | Intentionally offline during metadata-patch promotion |
 | Older downloaded copy | `C:\Users\JC Harvey\Downloads\claude-chatgpt-agent-bridge-0.1.1\claude-chatgpt-agent-bridge-0.1.1` | Stale v0.1.1 copy; do not use for new work |
 
 The active runtime directory and the clean Git development clone may intentionally remain separate until the newer development build completes live Windows validation. GitHub is the authoritative version history.
@@ -38,7 +38,7 @@ The active runtime directory and the clean Git development clone may intentional
 - Node.js: `v24.15.0`
 - Claude Code: `2.1.207`
 - Codex CLI: `0.144.3`
-- Bridge version: `0.1.8` staged; broker stopped pending v0.1.9
+- Bridge version: `0.1.9` installed; broker stopped pending v0.1.10
 - Default workspace: `bridge`, mapped to the active project directory
 - Host and port: loopback-only `127.0.0.1:8787`
 - Delegation depth limit: `2`
@@ -153,7 +153,7 @@ This section is the approved plan for completing and expanding Agent Bridge. The
 | Preserve local secrets and runtime data outside version control | Immediate | In effect | Claude | ChatGPT verifies Git status; Codex reviews later | None | `.env`, `bridge.config.json`, `.agent-bridge`, credentials, and logs remain uncommitted |
 | Inspect the stale v0.1.1 Downloads copy and archive or delete it | Immediate | Deletion approved by JC (July 17); pending ChatGPT inspection | ChatGPT | Claude may compare contents | Done — deletion approved | Nothing unique remains and the obsolete copy is removed from normal use |
 | Maintain GitHub Actions CI | Immediate | Completed | Claude | ChatGPT verifies workflow results; Codex reviews later | None | Pushes and pull requests continue to run required checks automatically |
-| Publish and maintain releases | Immediate | v0.1.8 published; v0.1.9 security patch in progress | ChatGPT | Claude implementation; Codex provider validation | None | Release notes document validation evidence and known limits accurately |
+| Publish and maintain releases | Immediate | v0.1.9 published; v0.1.10 metadata patch in progress | ChatGPT | Claude implementation; Codex provider validation | None | Release notes document validation evidence and known limits accurately |
 | Validate the DEP0190 spawn fix through a live Windows handoff | High | Completed July 23; Claude and Codex passed with no warning | ChatGPT/Codex | Claude implementation | None | Live Claude and Codex handoffs complete without the deprecation warning or quoting regressions |
 | Run real bidirectional `workspace_write` handoffs in a disposable repository | High | Completed July 23 with task IDs and exact output verification | ChatGPT/Codex | Claude harness and security review | None | Both target workers make bounded changes, pass guardrail checks, and produce an auditable diff |
 | Add a real development workspace to `bridge.config.json` | High | Selected (July 17): Agent Bridge repo via clean dev clone; allowlisting not yet applied | Claude | ChatGPT verifies permissions; Codex reviews later | Done — workspace selected | Clean-clone workspace is explicitly allowlisted with minimum necessary access |
@@ -161,11 +161,11 @@ This section is the approved plan for completing and expanding Agent Bridge. The
 | Add a status command for health, PID, clients, queue, and failures | High | Completed and tested for v0.1.8 | Claude | ChatGPT performed live Windows verification | None | One command reports actionable bridge state |
 | Review and harden sensitive-content handling in task records and logs | High | Completed for local v0.1.8 scope; further hosted controls remain optional | Claude | ChatGPT verified implementation | None | Storage, sharing, redaction, and cleanup behavior protects delegated information |
 | Add automated coverage reporting and a minimum threshold | Medium | Completed; 70/65/70 minimums enforced | Claude | ChatGPT verified locally and through CI | None | CI reports coverage and enforces an agreed baseline |
-| Add malformed-output, large-result, timeout-recovery, corruption, and concurrency tests | Medium | Completed for the v0.1.8 release scope; 49 tests pass | Claude | ChatGPT verified execution | None | Critical failure modes have repeatable automated tests |
+| Add malformed-output, large-result, timeout-recovery, corruption, and concurrency tests | Medium | Completed; v0.1.10 adds version-consistency regression coverage | Claude | ChatGPT verified execution | None | Critical failure modes have repeatable automated tests |
 | Validate installation on macOS and Linux | Medium | Not started | Claude | ChatGPT coordinates environments; Codex reviews platform assumptions later | Provide access only if no suitable environment is available | Installation and acceptance results are documented for each platform |
 | Maintain changelog and versioning guidance | Medium | Changelog completed; process remains ongoing | Claude | ChatGPT verifies release documentation | None | Every future release follows a consistent version and change-record process |
 | Choose the distribution model | Medium | Decided (July 17): ZIP first, then Windows installer; npx package a possible later add | JC | ChatGPT and Claude provide recommendations | Done — model chosen | Packaging work has a defined target |
-| Build the selected package or installer | Medium | v0.1.8 ZIP published; v0.1.9 replacement ZIP in progress; Windows installer remains next | ChatGPT/Claude | Codex provider path validated | None | Selected artifact installs cleanly and passes acceptance checks |
+| Build the selected package or installer | Medium | v0.1.9 ZIP published; v0.1.10 replacement ZIP in progress; Windows installer remains next | ChatGPT/Claude | Codex provider path validated | None | Selected artifact installs cleanly and passes acceptance checks |
 | Decide whether to pursue hosted and web deployment | Optional | Decided (July 17): local-only for now; revisit after a successful local model | JC | ChatGPT and Claude provide tradeoffs | Done — local-only direction selected | A documented local-only or hosted direction is selected |
 | Deploy a public HTTPS broker | Optional | Guide completed; deployment not started | Claude | ChatGPT coordinates access and verifies; Codex reviews later | Approve hosting provider, hostname, and cost | Broker is securely reachable through HTTPS with rollback available |
 | Configure hosted OAuth and connector access | Optional | Not started | Claude | ChatGPT coordinates authentication and verifies; Codex reviews later | Authenticate accounts and approve provider choices | OAuth validation and connector access work end to end |
@@ -236,7 +236,7 @@ JC has chosen to remain local-only for now (July 17). No hosted deployment work 
 3. **Claude:** run the complete verification suite, update documentation and acceptance preparation, and commit changes in small reviewable units without replacing the known-good runtime.
 4. **ChatGPT:** review Claude's diffs and claims, run available Windows and repository verification, synchronize approved documentation, and record any remaining defects or blockers.
 5. **Completed July 23:** run real Claude and Codex `workspace_write`, read-only enforcement, guardrail, warning, and process-cleanup acceptance with task IDs and exact evidence.
-6. **Current:** publish v0.1.9, attach the sanitized versioned ZIP, install that exact build into the active runtime, and reverify it.
+6. **Current:** publish v0.1.10, attach the sanitized versioned ZIP, install that exact build into the active runtime, and reverify it.
 7. **Next release:** build the Windows installer and enable the selected Agent Bridge development workspace after separate acceptance.
 
 ## Claude Handoff — Current Turn
@@ -265,7 +265,7 @@ Required reporting:
 
 ## Current Next Action
 
-Finish the v0.1.9 security patch, publish its sanitized Windows ZIP, install that exact released build into the active runtime, and reverify health, status, MCP registrations, audit state, and live provider delegation. Demo-console work begins only after those release steps are complete.
+Finish the v0.1.10 metadata patch, publish its sanitized Windows ZIP, install that exact released build into the active runtime, and reverify health, status, MCP registrations, audit state, and live provider delegation. Demo-console work begins only after those release steps are complete.
 
 ## Claude Implementation Turn — Completed July 14; Revalidated July 23, 2026
 

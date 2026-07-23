@@ -5,6 +5,7 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import { MockAdapter } from "../src/adapters/mock.js";
 import { AgentBridgeBroker } from "../src/broker.js";
+import { BRIDGE_VERSION } from "../src/instance.js";
 import { TaskStore } from "../src/store.js";
 import { startHttpServer } from "../src/transports/http.js";
 import { testConfig } from "./helpers.js";
@@ -22,6 +23,7 @@ test("HTTP transport completes an MCP initialize, list, and tool call", async ()
 
   try {
     await client.connect(new StreamableHTTPClientTransport(new URL(`${http.url}/mcp`)));
+    assert.equal(client.getServerVersion()?.version, BRIDGE_VERSION);
     const tools = await client.listTools();
     assert.ok(tools.tools.some((tool) => tool.name === "delegate_task"));
     const result = await client.callTool({ name: "agent_bridge_capabilities", arguments: {} });

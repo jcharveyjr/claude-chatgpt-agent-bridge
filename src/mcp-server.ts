@@ -1,6 +1,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { AgentBridgeBroker } from "./broker.js";
+import { BRIDGE_VERSION } from "./instance.js";
 import { AGENT_NAMES, SOURCE_AGENTS, TASK_MODES, TASK_STATUSES } from "./types.js";
 
 const textResult = (value: unknown, isError = false) => ({
@@ -14,7 +15,7 @@ const textResult = (value: unknown, isError = false) => ({
 
 export function createMcpServer(broker: AgentBridgeBroker): McpServer {
   const server = new McpServer(
-    { name: "agent-bridge", version: "0.1.0" },
+    { name: "agent-bridge", version: BRIDGE_VERSION },
     {
       instructions:
         "Delegate bounded work between Claude and Codex. Use capabilities first, submit with delegate_task, then poll get_task. Never create circular delegation; source_agent and target_agent must differ."
