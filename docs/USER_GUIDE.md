@@ -124,6 +124,18 @@ One shared HTTP process is the recommended setup for two agents. Stdio
 (`npm run start:stdio`) is for a single client or isolated diagnostics — do not
 run multiple stdio brokers against the same task store.
 
+### Local demo console
+
+With the HTTP broker running, open:
+
+```text
+http://127.0.0.1:8787/console/
+```
+
+The loopback-only console submits through the normal broker guardrails and
+shows capabilities, task status, results, errors, history, and cancellation.
+See [Demo Console](DEMO-CONSOLE.md) for the walkthrough and security behavior.
+
 ## 6. Connect Claude Code and Codex
 
 Point both at `http://127.0.0.1:8787/mcp` (the setup script does this for you):

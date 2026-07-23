@@ -7,6 +7,7 @@ import { createRemoteJWKSet, jwtVerify, type JWTVerifyResult } from "jose";
 import type { AgentBridgeBroker } from "../broker.js";
 import type { BridgeConfig } from "../config.js";
 import { isLoopbackHost } from "../config.js";
+import { handleDemoConsoleRequest } from "../demo-console.js";
 import { createMcpServer } from "../mcp-server.js";
 
 const MAX_BODY_BYTES = 1_000_000;
@@ -94,6 +95,9 @@ export async function startHttpServer(
       const url = new URL(request.url ?? "/", `http://${request.headers.host ?? "localhost"}`);
       if (url.pathname === "/health" && request.method === "GET") {
         json(response, 200, { ok: true, service: "agent-bridge", instance: broker.instanceMetadata() });
+        return;
+      }
+      if (await handleDemoConsoleRequest(request, response, url, broker, config, requestAuthorized)) {
         return;
       }
       if (url.pathname === "/.well-known/oauth-protected-resource/mcp" && request.method === "GET") {

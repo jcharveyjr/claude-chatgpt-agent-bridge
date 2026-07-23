@@ -50,7 +50,8 @@ The repository test suite currently proves:
 13. A Codex worker that emits `turn.completed` but retains a Windows process handle is closed and recorded successfully
 14. Deterministic worker-tree termination on cancellation and timeout, including a spawned grandchild
 15. Task-store corruption detection, completed-task retention, queue bursts, large results, and status instance matching
-16. The current suite contains 49 tests and enforces coverage minimums of 70% lines, 65% branches, and 70% functions
+16. Demo-console rendering, task lifecycle, origin and payload validation, and bearer-token enforcement
+17. The current suite contains 56 tests and enforces coverage minimums of 70% lines, 65% branches, and 70% functions
 
 Commands used:
 
