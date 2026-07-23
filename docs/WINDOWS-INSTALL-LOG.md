@@ -90,3 +90,18 @@ the complete acceptance sequence was rerun.
 - Test-broker stderr contained no DEP0190 or other deprecation warning.
 - Doctor, typecheck, 49/49 tests, build, HTTP smoke, and coverage passed. Coverage
   measured 77.91% lines, 73.89% branches, and 81.71% functions.
+
+
+## v0.1.9 security patch — July 23, 2026
+
+The published v0.1.8 ZIP was installed into the active directory with the
+broker kept offline during verification. `npm ci` reported one high and two
+moderate transitive advisories. The high finding was `fast-uri` 3.1.3 host
+confusion; v0.1.9 locks `fast-uri` 3.1.4.
+
+The patch candidate passes doctor, typecheck, 49/49 tests, build, HTTP smoke,
+and coverage (77.91% lines, 73.89% branches, 81.71% functions). `npm audit
+--audit-level=high` passes with zero high or critical findings. Two moderate
+`@hono/node-server` `serveStatic` advisories remain transitive through the
+MCP SDK. Agent Bridge does not import or call that handler and binds locally to
+loopback by default; the npm-proposed forced SDK downgrade was not taken.

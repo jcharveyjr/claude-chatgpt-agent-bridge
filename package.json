@@ -1,6 +1,6 @@
 {
   "name": "claude-chatgpt-agent-bridge",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "description": "A vendor-neutral MCP task broker for delegated work between Claude and Codex/ChatGPT agents.",
   "type": "module",
   "private": true,

@@ -56,14 +56,14 @@ build, and the HTTP smoke test on Node 20 and 22.
 
 ```powershell
 git pull
-git tag -a v0.1.8 -m "Agent Bridge v0.1.8"
-git push origin v0.1.8
-gh release create v0.1.8 --notes-file RELEASE_NOTES-v0.1.8.md
+git tag -a v0.1.9 -m "Agent Bridge v0.1.9"
+git push origin v0.1.9
+gh release create v0.1.9 --notes-file RELEASE_NOTES-v0.1.9.md
 ```
 
 No `gh` CLI? Push the tag, then on GitHub go to **Releases -> Draft a new
-release**, choose the `v0.1.8` tag, and paste the contents of
-`RELEASE_NOTES-v0.1.8.md`.
+release**, choose the `v0.1.9` tag, and paste the contents of
+`RELEASE_NOTES-v0.1.9.md`.
 
 ## 5. Keeping the runtime in sync
 

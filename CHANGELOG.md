@@ -6,6 +6,15 @@ follow semantic versioning.
 
 ## [Unreleased]
 
+## [0.1.9] - 2026-07-23
+
+### Security
+- Updated the locked `fast-uri` dependency from 3.1.3 to 3.1.4, resolving the
+  high-severity host-confusion advisory found during the v0.1.8 install audit.
+- Documented the two remaining moderate `@hono/node-server` advisories. Agent
+  Bridge does not import or call the affected `serveStatic` handler and remains
+  loopback-only by default; a forced MCP SDK downgrade was not taken.
+
 ## [0.1.8] - 2026-07-23
 
 ### Added
