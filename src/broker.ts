@@ -46,7 +46,7 @@ export class AgentBridgeBroker {
     );
     return {
       protocol: "MCP",
-      version: "0.1.0",
+      version: BRIDGE_VERSION,
       agents: Object.fromEntries(agents),
       workspaces: Object.keys(this.config.workspaces),
       defaultWorkspace: this.config.defaultWorkspace,

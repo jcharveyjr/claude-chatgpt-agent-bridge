@@ -105,3 +105,17 @@ and coverage (77.91% lines, 73.89% branches, 81.71% functions). `npm audit
 `@hono/node-server` `serveStatic` advisories remain transitive through the
 MCP SDK. Agent Bridge does not import or call that handler and binds locally to
 loopback by default; the npm-proposed forced SDK downgrade was not taken.
+
+
+## v0.1.10 runtime metadata patch — July 23, 2026
+
+Final live verification of the installed v0.1.9 release found that its new
+process and matching instance fingerprints still reported version 0.1.7 from
+`/health`; broker capabilities and the MCP handshake also retained older
+hardcoded values. The broker was stopped and v0.1.10 centralized these surfaces
+on `BRIDGE_VERSION`.
+
+A new test requires the runtime constant, instance metadata, capabilities,
+package metadata, and MCP initialize response to agree. The candidate passes
+doctor, typecheck, 50/50 tests, build, HTTP smoke, and coverage (77.92% lines,
+73.89% branches, 81.71% functions).

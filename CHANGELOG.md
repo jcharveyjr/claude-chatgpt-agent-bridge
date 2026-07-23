@@ -6,6 +6,13 @@ follow semantic versioning.
 
 ## [Unreleased]
 
+## [0.1.10] - 2026-07-23
+
+### Fixed
+- Unified health, capabilities, and MCP server version metadata behind
+  `BRIDGE_VERSION`; runtime surfaces now report the released version.
+- Added a regression test requiring runtime metadata to match `package.json`.
+
 ## [0.1.9] - 2026-07-23
 
 ### Security
