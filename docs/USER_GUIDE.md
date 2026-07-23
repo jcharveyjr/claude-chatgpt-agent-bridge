@@ -1,6 +1,6 @@
 # Agent Bridge — User Guide
 
-_Current version: 0.1.11_
+_Current version: 0.2.0_
 
 Agent Bridge is a vendor-neutral MCP task broker that lets Claude Code and
 Codex/ChatGPT agents delegate bounded work to one another through a shared,

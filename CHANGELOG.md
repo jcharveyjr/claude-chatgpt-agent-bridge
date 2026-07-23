@@ -6,6 +6,8 @@ follow semantic versioning.
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-07-23
+
 ### Added
 - Added a loopback-only demo console at `/console/` for submitting tasks to
   Claude or ChatGPT/Codex, watching queue progress, inspecting results, copying
