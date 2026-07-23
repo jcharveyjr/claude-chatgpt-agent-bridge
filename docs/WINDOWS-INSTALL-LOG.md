@@ -133,3 +133,20 @@ Claude emitted that message as structured JSON on stdout while exiting with
 code 1. v0.1.11 now preserves the provider message in the task error. The
 candidate passes doctor, typecheck, 52/52 tests, build, HTTP smoke, and coverage
 (77.95% lines, 74.32% branches, 81.82% functions).
+
+
+## v0.1.11 final promotion — July 23, 2026
+
+Release v0.1.11 was published at
+`https://github.com/jcharveyjr/claude-chatgpt-agent-bridge/releases/tag/v0.1.11`.
+The 205,889-byte Windows ZIP downloaded back with SHA-256
+`A46978158318C8AABB7913EC0FB0B80C64A24FE9FB63CAE7E5F3E6E437BA24D2`.
+
+The exact released build is active at `127.0.0.1:8787`. Health, status,
+instance fingerprints, MCP handshake/capabilities, both MCP registrations,
+audit review, doctor, typecheck, 52/52 tests, build, smoke, and coverage pass.
+Codex task `4f8c7a10-a597-4c6a-97a8-9c8bc5834f4e` returned
+`CODEX_FINAL_OK version=0.1.11`. Claude task
+`37188ce0-7a54-4411-8be0-54ce85607822` preserved the exact monthly spend
+limit message. Release files were unchanged, no worker remained, and no
+DEP0190 warning appeared. Work stopped before demo-console implementation.
