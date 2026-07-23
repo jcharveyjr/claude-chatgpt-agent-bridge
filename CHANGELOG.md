@@ -6,6 +6,13 @@ follow semantic versioning.
 
 ## [Unreleased]
 
+## [0.1.11] - 2026-07-23
+
+### Fixed
+- Claude CLI failures now surface structured provider messages emitted on
+  stdout before falling back to stderr or bounded raw output.
+- Added diagnostics tests for JSON, stderr, raw stdout, and empty failures.
+
 ## [0.1.10] - 2026-07-23
 
 ### Fixed
