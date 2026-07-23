@@ -6,6 +6,17 @@ follow semantic versioning.
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-07-23
+
+### Added
+- Added a loopback-only demo console at `/console/` for submitting tasks to
+  Claude or ChatGPT/Codex, watching queue progress, inspecting results, copying
+  output, and cancelling active work.
+- Added an authenticated same-origin console API backed by the existing broker,
+  preserving workspace, permission, source/target, task-size, and depth guards.
+- Added console lifecycle, origin-validation, payload-validation, and bearer
+  authentication tests plus `docs/DEMO-CONSOLE.md`.
+
 ## [0.1.11] - 2026-07-23
 
 ### Fixed

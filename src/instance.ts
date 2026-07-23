@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 
-export const BRIDGE_VERSION = "0.1.11";
+export const BRIDGE_VERSION = "0.2.0";
 
 export interface InstanceMetadata {
   instanceId: string;

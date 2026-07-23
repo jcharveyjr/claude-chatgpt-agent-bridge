@@ -1,6 +1,6 @@
 # Agent Bridge — User Guide
 
-_Current version: 0.1.11_
+_Current version: 0.2.0_
 
 Agent Bridge is a vendor-neutral MCP task broker that lets Claude Code and
 Codex/ChatGPT agents delegate bounded work to one another through a shared,
@@ -123,6 +123,18 @@ curl http://127.0.0.1:8787/health      # {"ok":true,"service":"agent-bridge"}
 One shared HTTP process is the recommended setup for two agents. Stdio
 (`npm run start:stdio`) is for a single client or isolated diagnostics — do not
 run multiple stdio brokers against the same task store.
+
+### Local demo console
+
+With the HTTP broker running, open:
+
+```text
+http://127.0.0.1:8787/console/
+```
+
+The loopback-only console submits through the normal broker guardrails and
+shows capabilities, task status, results, errors, history, and cancellation.
+See [Demo Console](DEMO-CONSOLE.md) for the walkthrough and security behavior.
 
 ## 6. Connect Claude Code and Codex
 
