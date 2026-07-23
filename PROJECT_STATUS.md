@@ -1,16 +1,16 @@
 # Claude + ChatGPT Agent Bridge — Project Status
 
 **Last updated:** July 23, 2026 (America/Chicago)
-**Current version:** 0.1.11 released and active
-**Overall status:** v0.1.11 is published, installed, healthy, and connected. The step-9 demo console is implemented and validated on `agent/demo-console`; the active runtime remains unchanged while the feature is reviewed and promoted.
+**Current version:** 0.2.0 released and active
+**Overall status:** v0.2.0 is published, installed, healthy, and connected. The demo console is live at `http://127.0.0.1:8787/console/`, and final installed-runtime handoffs passed through both Codex and Claude.
 
 ## Executive Summary
 
 Agent Bridge is a vendor-neutral MCP task broker that allows Claude Code and Codex/ChatGPT agents to delegate bounded tasks to one another through a shared asynchronous queue.
 
-The core local objective has been achieved. The v0.1.11 broker is running on this Windows computer, both CLIs are connected to the same MCP endpoint, all automated checks pass, and final Codex read-only task `4f8c7a10-a597-4c6a-97a8-9c8bc5834f4e` completed successfully. Claude authentication is valid, but new inference is externally blocked by the account monthly spend limit.
+The core local objective has been achieved. The v0.2.0 broker and demo console are running on this Windows computer, both CLIs are connected to the same MCP endpoint, all automated checks pass, and final read-only tasks completed successfully through both providers.
 
-The clean development clone, CI workflow, operational hardening, retention, status reporting, expanded automated testing, and real write-enabled acceptance are complete. v0.1.9 removes the high-severity audit finding, v0.1.10 synchronizes runtime version metadata, and v0.1.11 improves Claude provider-error diagnostics. Two moderate transitive Hono advisories remain documented because Agent Bridge does not use the affected static-file handler and npm's proposed remediation is a breaking MCP SDK downgrade.
+The clean development clone, CI workflow, operational hardening, retention, status reporting, expanded automated testing, real write-enabled acceptance, and local demo console are complete. v0.1.9 removes the high-severity audit finding, v0.1.10 synchronizes runtime version metadata, v0.1.11 improves Claude provider-error diagnostics, and v0.2.0 adds the console. Two moderate transitive Hono advisories remain documented because Agent Bridge does not use the affected static-file handler and npm's proposed remediation is a breaking MCP SDK downgrade.
 
 ## Demo Console Implementation — Completed July 23, 2026
 
@@ -24,12 +24,17 @@ The local, loopback-only console is implemented at `/console/`. It provides:
   origin checks, security headers, and the existing broker guardrails.
 
 Direct verification passed type checking, 56/56 tests, production build, HTTP
-smoke, coverage (83.08% lines, 74.44% branches, 82.68% functions), dependency
-audit at the high threshold, desktop headless rendering, and `doctor`. Live
-console task `5ab81522-0b1c-491a-b9bc-6f4d5fc744fa` completed through Codex with
-`DEMO_CONSOLE_LIVE_OK version=0.1.11`. Claude task
-`9eb7cc76-056c-40f2-a500-3b609ef338ec` reached Anthropic and displayed the known
-monthly-spend-limit error. Neither task changed source files.
+smoke, coverage, dependency audit at the high threshold, desktop headless
+rendering, and `doctor`. GitHub CI passed on Node 20 and Node 22.
+
+The exact 259,119-byte published ZIP was downloaded and matched SHA-256
+`237C0E5985F02E62430167927C6B6C5A9C13418DA5C1943C43CA29E115C9D7E3`
+before installation. Final installed console task
+`e187b5d3-782a-4bd4-ab11-166f6a00c5b3` completed through Codex with
+`CODEX_V020_FINAL_OK version=0.2.0`; task
+`b19536a0-cd5b-4ad5-affd-bedbab251ee5` completed through Claude with
+`CLAUDE_V020_FINAL_OK version=0.2.0`. Neither task changed files, no CLI worker
+remained, and the active release-file manifest matches the published artifact.
 
 ## Decisions Locked In — July 17, 2026
 
@@ -44,11 +49,12 @@ JC has made the four pending product and access decisions. These are no longer o
 
 | Item | Location | Status |
 | --- | --- | --- |
-| Active Windows installation | `C:\Users\JC Harvey\Documents\AgentBridge` | v0.1.11 released build, healthy and active |
+| Active Windows installation | `C:\Users\JC Harvey\Documents\AgentBridge` | v0.2.0 released build, healthy and active |
 | Public GitHub repository | `jcharveyjr/claude-chatgpt-agent-bridge` | Authoritative source repository |
-| Local MCP endpoint | `http://127.0.0.1:8787/mcp` | Healthy and connected on v0.1.11 |
-| Local health endpoint | `http://127.0.0.1:8787/health` | Healthy and reports v0.1.11 |
-| Demo console branch | `agent/demo-console` | Implemented and validated; not yet promoted to the active runtime |
+| Local MCP endpoint | `http://127.0.0.1:8787/mcp` | Healthy and connected on v0.2.0 |
+| Local health endpoint | `http://127.0.0.1:8787/health` | Healthy and reports v0.2.0 |
+| Local demo console | `http://127.0.0.1:8787/console/` | Healthy and active on the released build |
+| Rollback snapshot | `C:\Users\JC Harvey\Documents\AgentBridge-backups\AgentBridge-v0.1.11-before-v0.2.0-20260723` | Complete preserved v0.1.11 runtime |
 | Older downloaded copy | `C:\Users\JC Harvey\Downloads\claude-chatgpt-agent-bridge-0.1.1\claude-chatgpt-agent-bridge-0.1.1` | Stale v0.1.1 copy; do not use for new work |
 
 The active runtime directory and the clean Git development clone may intentionally remain separate until the newer development build completes live Windows validation. GitHub is the authoritative version history.
@@ -58,7 +64,7 @@ The active runtime directory and the clean Git development clone may intentional
 - Node.js: `v24.15.0`
 - Claude Code: `2.1.207`
 - Codex CLI: `0.144.3`
-- Bridge version: `0.1.11` released build, active
+- Bridge version: `0.2.0` released build, active
 - Default workspace: `bridge`, mapped to the active project directory
 - Host and port: loopback-only `127.0.0.1:8787`
 - Delegation depth limit: `2`
@@ -285,7 +291,7 @@ Required reporting:
 
 ## Current Next Action
 
-Review and promote the demo-console change after CI. Keep v0.1.11 active until that promotion is complete. To restore a successful Claude live task, raise or wait for reset of the Anthropic monthly spend limit, then rerun the read-only provider check.
+Use the released console to prepare and rehearse the Claude/ChatGPT connector demo. v0.2.0 promotion and both provider checks are complete; there is no current release blocker.
 
 ## Claude Implementation Turn — Completed July 14; Revalidated July 23, 2026
 

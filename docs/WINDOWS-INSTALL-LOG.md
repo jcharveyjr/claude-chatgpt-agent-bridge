@@ -150,3 +150,31 @@ Codex task `4f8c7a10-a597-4c6a-97a8-9c8bc5834f4e` returned
 `37188ce0-7a54-4411-8be0-54ce85607822` preserved the exact monthly spend
 limit message. Release files were unchanged, no worker remained, and no
 DEP0190 warning appeared. Work stopped before demo-console implementation.
+
+## v0.2.0 demo console release — July 23, 2026
+
+PR #7 merged to `main` at `14ccd347ece55bb547246f710f28ec15e0d99a8d`.
+The same commit is tagged `v0.2.0` and published at
+`https://github.com/jcharveyjr/claude-chatgpt-agent-bridge/releases/tag/v0.2.0`.
+
+The published Windows ZIP is 259,119 bytes with SHA-256
+`237C0E5985F02E62430167927C6B6C5A9C13418DA5C1943C43CA29E115C9D7E3`.
+The uploaded asset was downloaded again; its size and hash matched before
+installation.
+
+The v0.1.11 runtime was moved intact to
+`C:\Users\JC Harvey\Documents\AgentBridge-backups\AgentBridge-v0.1.11-before-v0.2.0-20260723`.
+The existing config and `.agent-bridge` task history were preserved. The exact
+published release is active at `C:\Users\JC Harvey\Documents\AgentBridge`;
+its 173 release files match the extracted published artifact byte for byte.
+
+Installed verification passed doctor, typecheck, 56/56 tests, build, HTTP smoke,
+coverage, and the high-threshold audit gate. Health, status, instance
+fingerprints, console capabilities, both MCP registrations, and the sign-in
+startup entry pass on v0.2.0.
+
+Final installed console task `e187b5d3-782a-4bd4-ab11-166f6a00c5b3`
+completed through Codex with `CODEX_V020_FINAL_OK version=0.2.0`. Task
+`b19536a0-cd5b-4ad5-affd-bedbab251ee5` completed through Claude with
+`CLAUDE_V020_FINAL_OK version=0.2.0`. Neither task changed files, the queue is
+healthy with no running work, and no Claude Code or Codex CLI worker remained.
