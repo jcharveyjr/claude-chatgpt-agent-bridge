@@ -119,3 +119,17 @@ A new test requires the runtime constant, instance metadata, capabilities,
 package metadata, and MCP initialize response to agree. The candidate passes
 doctor, typecheck, 50/50 tests, build, HTTP smoke, and coverage (77.92% lines,
 73.89% branches, 81.71% functions).
+
+
+## v0.1.11 provider diagnostics patch — July 23, 2026
+
+Final v0.1.10 provider verification completed Codex read-only task
+`5ebbf648-5646-40a4-a3db-993fbbee8fab` with `CODEX_OK version=0.1.10`
+and no file changes. Claude task `e130a363-6386-41be-a8b0-7a71a0040cc1`
+reached the authenticated Claude Code CLI but failed because Anthropic returned
+HTTP 429: the account had reached its monthly spend limit.
+
+Claude emitted that message as structured JSON on stdout while exiting with
+code 1. v0.1.11 now preserves the provider message in the task error. The
+candidate passes doctor, typecheck, 52/52 tests, build, HTTP smoke, and coverage
+(77.95% lines, 74.32% branches, 81.82% functions).

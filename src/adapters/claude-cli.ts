@@ -9,6 +9,16 @@ interface ClaudeJsonResult {
   total_cost_usd?: number;
 }
 
+export function claudeFailureDetail(stdout: string, stderr: string): string {
+  try {
+    const parsed = JSON.parse(stdout) as ClaudeJsonResult;
+    if (parsed.result?.trim()) return parsed.result.trim();
+  } catch {
+    // Fall through to the raw process output.
+  }
+  return stderr.trim() || stdout.trim().slice(0, 500) || "no error detail returned";
+}
+
 export class ClaudeCliAdapter implements AgentAdapter {
   public readonly name = "claude" as const;
   public readonly kind = "claude-cli";
@@ -69,7 +79,9 @@ export class ClaudeCliAdapter implements AgentAdapter {
       env: workerEnvironment("claude")
     });
     if (completed.exitCode !== 0) {
-      throw new Error(`Claude Code exited with ${completed.exitCode}: ${completed.stderr.trim()}`);
+      throw new Error(
+        `Claude Code exited with ${completed.exitCode}: ${claudeFailureDetail(completed.stdout, completed.stderr)}`
+      );
     }
 
     let parsed: ClaudeJsonResult;
